@@ -40,21 +40,7 @@ Team-reported conversations indicate interest in remaining-filament alerts, humi
 
 Device system:
 
-```mermaid
-flowchart LR
-    T["Temperature +<br/>humidity sensor"] --> C["Local controller<br/>Wi-Fi"]
-    L["Load cell"] --> C
-    R["Material / spool<br/>identification (NFC)"] --> C
-    C --> F["Circulation fan"]
-    F -. Airflow .-> D["Replaceable desiccant"]
-
-    classDef input fill:#ffffff,stroke:#cbd2d6,color:#182f3d;
-    classDef controller fill:#182f3d,stroke:#182f3d,color:#ffffff;
-    classDef actuator fill:#fce9dc,stroke:#df6826,color:#182f3d;
-    class T,L,R input;
-    class C controller;
-    class F,D actuator;
-```
+![sys](./image/system-diagram.png)
 
 Filament path: **Spool in box → PTFE outlet → Printer extruder.** The printer pulls the filament; the spool turns freely.
 
@@ -62,20 +48,7 @@ The fan circulates air through replaceable desiccant to support humidity control
 
 Wireless data paths:
 
-```mermaid
-flowchart LR
-    D["DrySpool"] -->|"Wi-Fi / Internet"| S["Secure remote service"]
-    S --> A["Remote dashboard<br/>(phone / web)"]
-    D -->|"Wi-Fi / LAN"| M["Local MQTT broker(optional)"]
-    M --> H["Home Assistant dashboard<br/>(optional)"]
-
-    classDef device fill:#182f3d,stroke:#182f3d,color:#ffffff;
-    classDef service fill:#ffffff,stroke:#cbd2d6,color:#182f3d;
-    classDef interface fill:#eee9e0,stroke:#cbd2d6,color:#182f3d;
-    class D device;
-    class S,M service;
-    class A,H interface;
-```
+![wifi](./image/wifi-diagram.png)
 
 ### Security Requirements Specification
 
