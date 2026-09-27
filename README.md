@@ -4,11 +4,11 @@
 
 **Team Name:** TBD
 
-| Team Member Name | Email Address |
-| --- | --- |
-| Sirui Wu | wu40@engineeringng.upenn.edu |
-| TBD | TBD |
-| TBD | TBD |
+| Team Member Name | Email Address                |
+| ---------------- | ---------------------------- |
+| Sirui Wu         | wu40@engineeringng.upenn.edu |
+| Zicong Zhang     | zhang89@seas.upenn.edu       |
+| TBD              | TBD                          |
 
 **GitHub Repository URL:** https://github.com/wu40-cmd/ese5180-X-dryspool
 
@@ -23,15 +23,15 @@ DrySpool is a proposed connected filament-storage system that monitors remaining
 - **Users:** Students, makers, and staff sharing 3D printers in university laboratories and makerspaces.
 - **Purchasers:** Laboratory or makerspace managers responsible for filament supplies and equipment maintenance.
 - **Initial market:** U.S. higher-education printing laboratories and makerspaces, with stakeholder outreach in the Philadelphia area.
-- **Market estimate:** An illustrative hardware opportunity of $217,000–650,000, based on [NCES's 3,633 degree-granting institutions in 2022–23](https://nces.ed.gov/pubs2024/2024144.pdf), an assumed 10%–30% adoption scope, four nodes per site, and a hypothetical 149 per node. The 20% base case is approximately 433,000. These are planning assumptions; site eligibility, demand, and pricing remain unvalidated.
+- **Market estimate:** An illustrative hardware opportunity of $217,000–650,000, based on [NCES&#39;s 3,633 degree-granting institutions in 2022–23](https://nces.ed.gov/pubs2024/2024144.pdf), an assumed 10%–30% adoption scope, four nodes per site, and a hypothetical 149 per node. The 20% base case is approximately 433,000. These are planning assumptions; site eligibility, demand, and pricing remain unvalidated.
 - **Initial sales target:** 10 sites × 4 nodes × $149 = 5,960 after prototype validation and product development; this is a planning target, not committed sales.
 - **Competitors:** [SpoolEase](https://www.spoolease.io/docs/full-guide/spool-weight-tracking) addresses filament tracking, and [SpoolSense](https://spoolsense.org/) uses NFC for spool identification. DrySpool proposes combining inventory monitoring, humidity control, and shared-space alerts.
 
 ### Stakeholders
 
-| Stakeholder | Organization / role | Feedback focus |
-| --- | --- | --- |
-| **Tex Kang** | **UPenn makerspace contact** | Filament handling, useful alerts, and staff/student workflows. |
+| Stakeholder                              | Organization / role                | Feedback focus                                                 |
+| ---------------------------------------- | ---------------------------------- | -------------------------------------------------------------- |
+| **Tex Kang**                       | **UPenn makerspace contact** | Filament handling, useful alerts, and staff/student workflows. |
 | **Hive76 staff member or manager** | **Hive76 commu hackerspace** | Shared inventory, spool identification, and maintenance needs. |
 
 Team-reported conversations indicate interest in remaining-filament alerts, humidity-related functions, and RFID identification. These are preliminary qualitative inputs; prototype feedback and willingness to pay remain to be established.
