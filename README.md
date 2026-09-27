@@ -8,7 +8,7 @@
 | ---------------- | ---------------------------- |
 | Sirui Wu         | wu40@engineeringng.upenn.edu |
 | Zicong Zhang     | zhang89@seas.upenn.edu       |
-| Deepa Lokesh     | deepasr1@engineering.upenn.edu  |
+| Deepa Lokesha     | deepasr1@engineering.upenn.edu  |
 
 **GitHub Repository URL:** https://github.com/ese5180/X-dryspool
 
