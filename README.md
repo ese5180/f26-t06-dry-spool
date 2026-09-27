@@ -1,16 +1,16 @@
 # ESE5180: IoT Venture
 
-**Team Number:** TBD
+**Team Number: T06** 
 
-**Team Name:** TBD
+**Team Name: X** 
 
 | Team Member Name | Email Address                |
 | ---------------- | ---------------------------- |
 | Sirui Wu         | wu40@engineeringng.upenn.edu |
 | Zicong Zhang     | zhang89@seas.upenn.edu       |
-| TBD              | TBD                          |
+| DeepaLokesha     | deepasr1@engineering.upenn.edu  |
 
-**GitHub Repository URL:** https://github.com/wu40-cmd/ese5180-X-dryspool
+**GitHub Repository URL:** https://github.com/ese5180/X-dryspool
 
 ## Concept Development
 
@@ -66,7 +66,7 @@ Wireless data paths:
 flowchart LR
     D["DrySpool"] -->|"Wi-Fi / Internet"| S["Secure remote service"]
     S --> A["Remote dashboard<br/>(phone / web)"]
-    D -->|"Wi-Fi / LAN"| M["Local MQTT broker"]
+    D -->|"Wi-Fi / LAN"| M["Local MQTT broker(optional)"]
     M --> H["Home Assistant dashboard<br/>(optional)"]
 
     classDef device fill:#182f3d,stroke:#182f3d,color:#ffffff;
