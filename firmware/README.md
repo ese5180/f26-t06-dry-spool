@@ -15,8 +15,10 @@ sample (audited at upstream commit `b338f2f8548027612c6a94f9379f39d41cf55c37`).
 - Memfault diagnostics and HTTPS transport within nRF Cloud.
 - Memfault Release Management checks and HTTPS firmware download.
 - MCUboot with a team-owned ECDSA-P256 signing key.
-- A 904 KiB primary image slot in internal flash and a 904 KiB download slot in
+- An 896 KiB primary image slot in internal flash and an 896 KiB download slot in
   the nRF7002 DK's external MX25R64 flash.
+- An 8 KiB internal-flash Memfault coredump partition, sized for the measured
+  7,444 B complete dump without consuming application RAM.
 - Test/confirm boot behavior so an image that fails product initialization can
   be reverted by MCUboot.
 
@@ -63,6 +65,21 @@ The release artifact uploaded to Memfault is:
 
 Increment both `VERSION` and `CONFIG_APP_VERSION` before making a release so
 the new image has a distinct version in MCUboot and Memfault.
+
+## Local hardware verification
+
+The connected nRF7002 DK was tested on 2026-10-31 with NCS 3.4.0:
+
+- The signed `0.1.0` image flashed, MCUboot validated and chain-loaded it, and
+  the DrySpool application reached its UART shell.
+- `wlan0` and the external `mx25r6435f` flash device both reported `READY`.
+- Memfault reported `8192 B` coredump capacity for a `7444 B` required dump.
+- A controlled Memfault fault rebooted the board, the complete `7444 B`
+  coredump remained available after reboot, and the test dump was then cleared.
+
+Cloud connectivity and an end-to-end FOTA release are intentionally still
+pending until real Wi-Fi, nRF Cloud device credentials, and the Memfault project
+key are provisioned locally.
 
 ## First-device setup
 

@@ -136,13 +136,15 @@ These values come from a clean NCS 3.4.0 sysbuild of version `0.1.0` on the
 | --- | ---: | ---: | --- |
 | MCUboot | 39,308 B (38.4 KiB) | 64 KiB | nRF5340 internal flash |
 | TF-M secure application | 130,008 B (127.0 KiB) | 128 KiB sub-slot | nRF5340 slot 0 |
-| DrySpool non-secure application | 727,264 B (710.2 KiB) | 776 KiB sub-slot | nRF5340 slot 0 |
-| Complete signed update artifact | 858,487 B (838.4 KiB) | 904 KiB image slot | slot 0 / slot 1 |
-| Download staging slot 1 | — | 904 KiB | external MX25R64 flash |
+| DrySpool non-secure application | 727,728 B (710.7 KiB) | 768 KiB sub-slot | nRF5340 slot 0 |
+| Complete signed update artifact | 858,951 B (838.8 KiB) | 896 KiB image slot | slot 0 / slot 1 |
+| Download staging slot 1 | — | 896 KiB | external MX25R64 flash |
+| Memfault coredump | 7,444 B required | 8 KiB | nRF5340 internal flash |
 | Settings | — | 8 KiB | nRF5340 internal flash |
 | TF-M storage | — | 48 KiB | nRF5340 internal flash |
 
-The external MX25R64 is 64 Mbit (8 MiB); only a 904 KiB partition is assigned
+The non-secure image uses 393,708 B of the 400 KiB application RAM. The external
+MX25R64 is 64 Mbit (8 MiB); only an 896 KiB partition is assigned
 to the secondary image. The primary and secondary image slots are equal-sized
 so MCUboot's swap-using-move mode can exchange them without a scratch partition.
 
@@ -170,8 +172,9 @@ path for diagnostics, release checks, and the payload download.
 - Network messages are queued and retried. Repeated cloud send failures reset
   and re-establish the connection after a cooldown instead of blocking local
   product behavior.
-- Memfault records reboot reasons, metrics, faults, and a RAM-backed coredump to
-  support diagnosis before the next release.
+- Memfault records reboot reasons, metrics, faults, and a flash-backed coredump
+  to support diagnosis before the next release. The dedicated 8 KiB partition
+  preserves the full measured 7,444 B dump without consuming scarce application RAM.
 
 ### Verification status
 
@@ -179,6 +182,10 @@ path for diagnostics, release checks, and the payload download.
 - [x] Clean NCS 3.4.0 build produces a versioned ECDSA-signed image.
 - [x] MCUboot, external slot 1, Memfault FOTA, and rollback configuration are enabled.
 - [x] Product-representative DrySpool messages are implemented behind a sensor interface.
+- [x] The connected nRF7002 DK was flashed and booted through MCUboot; the app,
+  Wi-Fi device, and external MX25R64 all report ready.
+- [x] A controlled Memfault fault produced a complete 7,444 B flash-backed
+  coredump, survived reboot, and was cleared after verification.
 - [ ] Each teammate copies the private signing key out of band and independently builds/flashes.
 - [ ] Provision the connected DK's nRF Cloud credentials and Wi-Fi network.
 - [ ] Perform the live telemetry and two-version FOTA/rollback checkoff on hardware.

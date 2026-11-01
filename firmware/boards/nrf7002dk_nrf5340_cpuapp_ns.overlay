@@ -21,7 +21,7 @@
 		slot0_partition: partition@10000 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-0";
-			reg = <0x10000 DT_SIZE_K(904)>;
+			reg = <0x10000 DT_SIZE_K(896)>;
 		};
 	};
 };
@@ -34,7 +34,7 @@
 
 		slot1_partition: partition@0 {
 			label = "image-1";
-			reg = <0x0 DT_SIZE_K(904)>;
+			reg = <0x0 DT_SIZE_K(896)>;
 		};
 	};
 };
@@ -53,13 +53,19 @@
 	slot0_ns_partition: partition@20000 {
 		compatible = "zephyr,mapped-partition";
 		label = "image-0-nonsecure";
-		reg = <0x20000 DT_SIZE_K(776)>;
+		reg = <0x20000 DT_SIZE_K(768)>;
 	};
 };
 
 &flash0 {
 	partitions {
-		/* 0x10000 (boot_partition) + 904K (slot0_partition) = 0xf2000 */
+		/* 0x10000 (boot) + 896K (slot0) = 0xf0000. */
+		memfault_coredump_partition: partition@f0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "memfault_coredump_partition";
+			reg = <0xf0000 DT_SIZE_K(8)>;
+		};
+
 		nonsecure_storage: partition@f2000 {
 			compatible = "zephyr,mapped-partition";
 			label = "nonsecure-storage";
@@ -130,6 +136,10 @@
 };
 
 / {
+	chosen {
+		nordic,memfault-coredump-partition = &memfault_coredump_partition;
+	};
+
 	/delete-node/ nordic-tz-secure;
 	/delete-node/ nordic-tz-nonsecure;
 
