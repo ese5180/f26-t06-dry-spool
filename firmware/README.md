@@ -77,9 +77,8 @@ The connected nRF7002 DK was tested on 2026-10-31 with NCS 3.4.0:
 - A controlled Memfault fault rebooted the board, the complete `7444 B`
   coredump remained available after reboot, and the test dump was then cleared.
 
-Cloud connectivity and an end-to-end FOTA release are intentionally still
-pending until real Wi-Fi, nRF Cloud device credentials, and the Memfault project
-key are provisioned locally.
+Cloud connectivity and the end-to-end FOTA path were subsequently verified on
+2026-11-01; see **Verified FOTA results** below.
 
 ## First-device setup
 
@@ -99,6 +98,17 @@ key are provisioned locally.
    `DRYSPOOL_*` message streams.
 4. Confirm diagnostic chunks arrive in the Memfault area of nRF Cloud.
 
+The current nRF7002 DK configuration intentionally sets
+`CONFIG_SAMPLE_MEMFAULT_BUTTONS=n` because the application already uses about
+96% of its available RAM and cannot afford the sample's additional button
+thread. Trigger a release check from the COM9 UART shell instead:
+
+```text
+mflt get_latest_release
+```
+
+`BUTTON2` is therefore not a FOTA trigger in this build.
+
 ## FOTA checkoff flow
 
 1. Flash and run version 0.1.0; capture its serial log and cloud telemetry.
@@ -107,13 +117,39 @@ key are provisioned locally.
    project (`software type: dryspool-app`, `hardware: nrf7002dk-rev1`).
 3. Create and activate a Release for the device's cohort. Enable server-side
    Developer Mode while repeatedly testing to avoid development rate limits.
-4. The running application checks for a Release, downloads it over Wi-Fi/HTTPS
-   to external slot 1, marks it pending, and reboots.
+4. Run `mflt get_latest_release` on COM9. The running application checks for the
+   Release, downloads it over Wi-Fi/HTTPS to external slot 1, marks it pending,
+   and reboots.
 5. MCUboot validates the hash and ECDSA signature, swaps it into internal slot
    0, and starts it in test mode. DrySpool confirms it only after the product
    sensor layer passes startup.
-6. Demonstrate that an image signed by a different key is rejected and that an
-   unconfirmed/crashing test image rolls back on the next boot.
+6. Verify that a foreign-key image fails signature verification. Demonstrate
+   test-image confirmation by resetting the board again and confirming that the
+   new version remains in slot 0 rather than rolling back.
+
+## Verified FOTA results
+
+The complete two-version flow was tested on the connected nRF7002 DK on
+2026-11-01:
+
+- Version `0.1.0+0` was running when release `0.1.1+0` was activated for the
+  Memfault `default` cohort.
+- The uploaded ECDSA-P256-signed payload was 858,974 B with SHA-256
+  `8c7175e50204011958affc8e560a65c2901dc17d57b91adbe9c84cf6b06d6eb1`.
+- `mflt get_latest_release` downloaded the payload over Wi-Fi/HTTPS to external
+  slot 1 and rebooted the board. The next boot logged `Confirming FOTA update
+  image`, proving that MCUboot had started it as an unconfirmed test image.
+- `mflt get_device_info` then reported software type `dryspool-app`, version
+  `0.1.1+0`, and hardware `nrf7002dk-rev1`.
+- A forced heartbeat posted 217 B successfully, after which the Memfault device
+  record reported `0.1.1+0`.
+- A second application-core reset left the primary MCUboot header at version
+  `0.1.1+0`, proving that confirmation persisted and no rollback occurred.
+- A latest-release query for the updated version returned HTTP 204, confirming
+  the expected no-update path.
+- `imgtool verify` validated the release with the team key. A separately
+  generated image signed by another ECDSA-P256 key failed verification with
+  `No signature found for the given key`.
 
 ## Hardware work still to integrate
 

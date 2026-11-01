@@ -186,6 +186,17 @@ path for diagnostics, release checks, and the payload download.
   Wi-Fi device, and external MX25R64 all report ready.
 - [x] A controlled Memfault fault produced a complete 7,444 B flash-backed
   coredump, survived reboot, and was cleared after verification.
+- [x] The DK was provisioned in nRF Cloud, joined Wi-Fi, authenticated over
+  CoAP/DTLS, and continuously reported all four DrySpool telemetry values.
+- [x] Signed version `0.1.1+0` was deployed to the `default` cohort and
+  downloaded from a running `0.1.0+0` image over Wi-Fi/HTTPS. MCUboot booted
+  the update in test mode, DrySpool confirmed it, and a second hardware reset
+  retained `0.1.1+0` without rollback.
+- [x] The updated device posted a 217 B Memfault heartbeat; the cloud then
+  reported `dryspool-app` version `0.1.1+0` on `nrf7002dk-rev1`. A subsequent
+  latest-release query returned HTTP 204 (no newer release).
+- [x] `imgtool` accepted the team-signed `0.1.1+0` image and rejected an
+  otherwise identical test image signed by a different ECDSA-P256 key.
 - [ ] Each teammate copies the private signing key out of band and independently builds/flashes.
-- [ ] Provision the connected DK's nRF Cloud credentials and Wi-Fi network.
-- [ ] Perform the live telemetry and two-version FOTA/rollback checkoff on hardware.
+- [x] Provision the connected DK's nRF Cloud credentials and Wi-Fi network.
+- [x] Perform the live telemetry and two-version FOTA/rollback checkoff on hardware.
