@@ -5,6 +5,10 @@ It targets `nrf7002dk/nrf5340/cpuapp/ns` with nRF Connect SDK 3.4.0 and is based
 on Nordic's current online [`samples/wifi/nrf_cloud`](https://github.com/nrfconnect/sdk-nrf/tree/main/samples/wifi/nrf_cloud)
 sample (audited at upstream commit `b338f2f8548027612c6a94f9379f39d41cf55c37`).
 
+For a fresh teammate machine, additional devices, release publishing, and the
+classroom demonstration sequence, follow
+[`../docs/TEAM_SETUP_AND_DEMO.md`](../docs/TEAM_SETUP_AND_DEMO.md).
+
 ## What is implemented
 
 - Wi-Fi connection management and nRF Cloud CoAP device messages.

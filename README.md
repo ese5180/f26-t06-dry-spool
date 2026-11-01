@@ -12,6 +12,14 @@
 
 **GitHub Repository URL:** https://github.com/ese5180/f26-t06-dry-spool
 
+## Team operation links
+
+- [`firmware/README.md`](firmware/README.md): firmware architecture, build,
+  memory map, and verified FOTA results.
+- [`docs/TEAM_SETUP_AND_DEMO.md`](docs/TEAM_SETUP_AND_DEMO.md): repeatable
+  teammate setup, multi-device provisioning, release procedure, and the live
+  demo walkthrough.
+
 ## Concept Development
 
 ### Product Function
@@ -79,7 +87,9 @@ The team uses one common firmware project for the rest of the semester—not a
 separate FOTA-only demo. The project-representative application telemetry and
 the update path therefore share the same Wi-Fi/cloud connection, configuration,
 memory map, and build. See [`firmware/README.md`](firmware/README.md) for setup,
-build, onboarding, and checkoff steps.
+build, onboarding, and checkoff results. Teammates bringing up additional
+boards should follow the complete
+[`team setup and demo runbook`](docs/TEAM_SETUP_AND_DEMO.md).
 
 ### Selected framework
 
