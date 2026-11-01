@@ -5,6 +5,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/logging/log.h>
@@ -586,6 +587,27 @@ static void check_credentials(void)
 	k_sleep(K_FOREVER);
 }
 
+static void log_wifi_mac(void)
+{
+	struct net_if *iface = net_if_get_wifi_sta();
+
+	if (iface == NULL) {
+		LOG_WRN("Wi-Fi station interface unavailable; MAC address not reported");
+		return;
+	}
+
+	const struct net_linkaddr *mac = net_if_get_link_addr(iface);
+
+	if (mac->len != 6) {
+		LOG_WRN("Wi-Fi MAC address unavailable");
+		return;
+	}
+
+	LOG_INF("Device Wi-Fi MAC: %02X:%02X:%02X:%02X:%02X:%02X",
+		mac->addr[0], mac->addr[1], mac->addr[2],
+		mac->addr[3], mac->addr[4], mac->addr[5]);
+}
+
 void cloud_connection_thread_fn(void)
 {
 	long_led_pattern(LED_WAITING);
@@ -613,6 +635,7 @@ void cloud_connection_thread_fn(void)
 
 	/* Enable the connection manager for all interfaces and allow them to connect. */
 	conn_mgr_all_if_up(true);
+	log_wifi_mac();
 
 	LOG_INF("Enabling connectivity...");
 	conn_mgr_all_if_connect(true);

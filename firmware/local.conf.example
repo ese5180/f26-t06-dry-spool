@@ -1,3 +1,0 @@
-# Copy this file to local.conf. The local.conf file is gitignored.
-# Replace the placeholder with the Project Key shown by nRF Cloud/Memfault.
-CONFIG_MEMFAULT_NCS_PROJECT_KEY="REPLACE_WITH_MEMFAULT_PROJECT_KEY"

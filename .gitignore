@@ -3,3 +3,5 @@ build*/
 firmware/local.conf
 firmware/keys/*.pem
 firmware/keys/*.key
+firmware/dryspool-device.csv
+/secret/

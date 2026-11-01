@@ -45,7 +45,7 @@ Organization Auth Token (OAT) in Drive or Git.
    git pull --ff-only origin wireless-update
    ```
 
-4. Download `dryspool-signing.pem` from the restricted Drive folder and place
+4. Download `rdyspool-signing.pem` from the restricted Drive folder and place
    it at:
 
    ```text
