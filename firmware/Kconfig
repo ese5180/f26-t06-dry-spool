@@ -8,7 +8,7 @@ menu "DrySpool firmware settings"
 
 config APP_VERSION
 	string "DrySpool application version"
-	default "0.1.0"
+	default "0.1.1"
 
 config CLOUD_CONNECTION_RETRY_TIMEOUT_SECONDS
 	int "Cloud connection retry timeout (seconds)"
