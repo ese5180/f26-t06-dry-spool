@@ -1,0 +1,17 @@
+sample:
+  name: DrySpool Wi-Fi nRF Cloud FOTA firmware
+tests:
+  dryspool.wifi.coap.fota:
+    sysbuild: true
+    build_only: true
+    integration_platforms:
+      - nrf7002dk/nrf5340/cpuapp/ns
+    platform_allow:
+      - nrf7002dk/nrf5340/cpuapp/ns
+    extra_args:
+      - EXTRA_CONF_FILE="coap.conf;coap-fota.conf"
+    tags:
+      - dryspool
+      - wifi
+      - fota
+      - sysbuild

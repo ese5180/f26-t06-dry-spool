@@ -1,0 +1,5 @@
+.codex/
+build*/
+firmware/local.conf
+firmware/keys/*.pem
+firmware/keys/*.key
