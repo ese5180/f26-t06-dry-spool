@@ -1,7 +1,14 @@
 .codex/
+.vscode/
 build*/
+.env
+PROJECT_KEY.txt
 firmware/local.conf
 firmware/keys/*.pem
 firmware/keys/*.key
 firmware/dryspool-device.csv
 /secret/
+**/onboard.csv
+**/onboard-results.csv
+**/*_prv.pem
+**/*_private_key.pem
