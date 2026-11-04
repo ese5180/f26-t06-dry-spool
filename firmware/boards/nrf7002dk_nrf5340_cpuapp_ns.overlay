@@ -4,13 +4,10 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
-/* Dual-slot layout for MCUboot (with external flash for slot1) */
+/* NCS 3.4 cpuapp/ns target: dual-slot MCUboot layout with external slot1. */
 
 /delete-node/ &slot0_partition;
 /delete-node/ &slot1_partition;
-/delete-node/ &tfm_ps_partition;
-/delete-node/ &tfm_its_partition;
-/delete-node/ &tfm_otp_partition;
 /delete-node/ &storage_partition;
 /delete-node/ &sram0_ns;
 
@@ -40,7 +37,7 @@
 };
 
 &slot0_partition {
-	ranges = <0x0 0x10000 DT_SIZE_K(904)>;
+	ranges = <0x0 0x10000 DT_SIZE_K(896)>;
 	#address-cells = <1>;
 	#size-cells = <1>;
 
@@ -59,18 +56,38 @@
 
 &flash0 {
 	partitions {
-		/* 0x10000 (boot) + 896K (slot0) = 0xf0000. */
-		memfault_coredump_partition: partition@f0000 {
+		/*
+		 * 0x10000 (boot) + 896K (slot0) = 0xf0000.
+		 *
+		 * nRF5340 flash security attribution has 32 KiB granularity. Keep all
+		 * TF-M storage in the secure 0xf0000-0xf7fff region and all Zephyr
+		 * storage in the non-secure 0xf8000-0xfffff region. Mixing secure and
+		 * non-secure partitions inside either region causes TF-M Protected
+		 * Storage to fault after credentials have been persisted.
+		 */
+		tfm_ps_partition: partition@f0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "memfault_coredump_partition";
-			reg = <0xf0000 DT_SIZE_K(8)>;
+			label = "tfm-ps";
+			reg = <0xf0000 DT_SIZE_K(16)>;
 		};
 
-		nonsecure_storage: partition@f2000 {
+		tfm_its_partition: partition@f4000 {
+			compatible = "zephyr,mapped-partition";
+			label = "tfm-its";
+			reg = <0xf4000 DT_SIZE_K(8)>;
+		};
+
+		tfm_otp_partition: partition@f6000 {
+			compatible = "zephyr,mapped-partition";
+			label = "tfm-otp";
+			reg = <0xf6000 DT_SIZE_K(8)>;
+		};
+
+		nonsecure_storage: partition@f8000 {
 			compatible = "zephyr,mapped-partition";
 			label = "nonsecure-storage";
-			reg = <0xf2000 DT_SIZE_K(8)>;
-			ranges = <0x0 0xf2000 DT_SIZE_K(8)>;
+			reg = <0xf8000 DT_SIZE_K(8)>;
+			ranges = <0x0 0xf8000 DT_SIZE_K(8)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -81,32 +98,10 @@
 			};
 		};
 
-		/* 0xf2000 + 8K = 0xf4000; ends exactly at 0x100000 (1 MiB, end of flash0) */
-		tfm_storage_partition: partition@f4000 {
+		memfault_coredump_partition: partition@fa000 {
 			compatible = "zephyr,mapped-partition";
-			label = "tfm-storage";
-			reg = <0xf4000 DT_SIZE_K(48)>;
-			ranges = <0x0 0xf4000 DT_SIZE_K(48)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			tfm_its_partition: partition@0 {
-				compatible = "zephyr,mapped-partition";
-				label = "tfm-its";
-				reg = <0x0 DT_SIZE_K(8)>;
-			};
-
-			tfm_otp_partition: partition@4000 {
-				compatible = "zephyr,mapped-partition";
-				label = "tfm-otp";
-				reg = <0x4000 DT_SIZE_K(8)>;
-			};
-
-			tfm_ps_partition: partition@8000 {
-				compatible = "zephyr,mapped-partition";
-				label = "tfm-ps";
-				reg = <0x8000 DT_SIZE_K(16)>;
-			};
+			label = "memfault_coredump_partition";
+			reg = <0xfa000 DT_SIZE_K(8)>;
 		};
 	};
 };
