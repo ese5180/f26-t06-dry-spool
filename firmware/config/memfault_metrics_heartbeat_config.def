@@ -1,0 +1,6 @@
+/* DrySpool metrics forwarded to Memfault (3.11 fleet management).
+ * Values are stored x10 and scaled back by Memfault (e.g. 425 -> 42.5).
+ */
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(dryspool_humidity_pct, kMemfaultMetricType_Unsigned, 10)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(dryspool_temperature_c, kMemfaultMetricType_Signed, 10)
+MEMFAULT_METRICS_KEY_DEFINE(dryspool_filament_g, kMemfaultMetricType_Unsigned)

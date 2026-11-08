@@ -210,3 +210,144 @@ path for diagnostics, release checks, and the payload download.
 - [ ] Each teammate copies the private signing key out of band and independently builds/flashes.
 - [x] Provision the connected DK's nRF Cloud credentials and Wi-Fi network.
 - [x] Perform the live telemetry and two-version FOTA/rollback checkoff on hardware.
+
+## Fleet management with Memfault (3.11)
+
+Shipped firmware is never perfect: bugs are found and features are added after
+devices are in makerspaces. DrySpool therefore uses Memfault, now part of
+nRF Cloud (organization `zicong-zhang`, project `default-project`), to roll out
+signed updates to selected devices, collect crash reports remotely, and monitor
+product data across the fleet. All features below were demonstrated on the
+nRF7002 DK with device ID `9A4E619BA05C2E84`.
+
+### Fleet structure
+
+| Concept | DrySpool use |
+| --- | --- |
+| Software type | `dryspool-app` (`CONFIG_MEMFAULT_NCS_FW_TYPE`) |
+| Hardware version | `nrf7002dk-rev1` (`CONFIG_MEMFAULT_NCS_HW_VERSION`) |
+| Device ID | Hardware-derived nRF5340 ID, e.g. `9A4E619BA05C2E84` |
+| Cohorts | `default` for team boards; `deepa-test` isolates one test board |
+| Releases | One OTA release per version, activated per cohort |
+| Symbol files | The `zephyr.elf` of every released build, matched by GNU build ID |
+
+Cohorts let a release be tested on one board before it reaches the rest of the
+fleet. Activating a release for `deepa-test` updated only that board; the other
+boards in `default` kept their versions.
+
+### 1. OTA firmware updates with version info
+
+Each update follows the same path:
+
+1. Increase `PATCHLEVEL` in `firmware/VERSION` and the `APP_VERSION` default in
+   `firmware/Kconfig` (both must match, e.g. `0.1.4`).
+2. Build with sysbuild; the image is signed with the team ECDSA-P256 key.
+   `imgtool verify` must report `Image was correctly validated` and the new version.
+3. In nRF Cloud, create release `0.1.4+0`, add `zephyr.signed.bin` as the OTA
+   payload for `nrf7002dk-rev1`, and upload the matching `zephyr.elf` to Symbol Files.
+4. Create an activation for the target cohort only (`deepa-test`).
+5. On the board UART, `mflt get_latest_release` downloads the image over
+   Wi-Fi/HTTPS into external slot 1; MCUboot verifies and swaps it, and the
+   application confirms it after startup.
+6. `mflt get_device_info` reports the new `SW version`, and the release page
+   shows 100% device coverage.
+
+Verified sequence on `9A4E619BA05C2E84`: `0.1.2+0` → `0.1.3+0` → `0.1.4+0`.
+Each update downloaded about 859 KB, booted in test mode, was confirmed, and
+remained installed after a further hardware reset.
+
+![OTA releases and cohort coverage](image/fleet/ota-releases.png)
+
+![Board reporting 0.1.4+0 after the update](image/fleet/serial-0.1.4.png)
+
+### 2. Core dumps
+
+The firmware stores a Memfault coredump in a dedicated 8 KiB internal-flash
+partition (`memfault_coredump_partition`, `0xFA000`). After a fault the board
+reboots, and the dump is uploaded with the next `mflt post_chunks`. Memfault uses
+the uploaded `zephyr.elf` (matched by GNU build ID) to turn addresses into
+function names and line numbers.
+
+Test procedure:
+
+```text
+mflt test assert      # deliberate software assert; the board reboots
+mflt post_chunks      # upload the saved coredump
+```
+
+Result: issue **"Assert at memfault_demo_cli_cmd_assert"** on `0.1.3+0`, with
+reason *Assert*, the full call path from `shell_process` (`shell.c`) through
+`memfault_demo_cli_cmd_assert` to `prv_fault_handling_assert`, the Cortex-M
+fault registers (CFSR, HFSR, SHCSR), and a memory view.
+
+![Core dump issue with stack trace](image/fleet/coredump-trace.png)
+
+![Issue details: device, cohort, and version](image/fleet/coredump-issue.png)
+
+### 3. Forwarding critical device data
+
+Humidity is DrySpool's most important value: it shows whether stored filament
+stays dry. Starting with `0.1.4`, the firmware forwards it, together with
+enclosure temperature and remaining filament, as Memfault heartbeat metrics.
+
+`firmware/config/memfault_metrics_heartbeat_config.def`:
+
+```c
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(dryspool_humidity_pct, kMemfaultMetricType_Unsigned, 10)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(dryspool_temperature_c, kMemfaultMetricType_Signed, 10)
+MEMFAULT_METRICS_KEY_DEFINE(dryspool_filament_g, kMemfaultMetricType_Unsigned)
+```
+
+`firmware/src/application.c` updates the metrics on every 60-second sample:
+
+```c
+MEMFAULT_METRIC_SET_UNSIGNED(dryspool_humidity_pct,
+			     (uint32_t)(reading->humidity_pct * 10.0));
+MEMFAULT_METRIC_SET_SIGNED(dryspool_temperature_c,
+			   (int32_t)(reading->temperature_c * 10.0));
+MEMFAULT_METRIC_SET_UNSIGNED(dryspool_filament_g,
+			     (uint32_t)reading->filament_remaining_g);
+```
+
+Values are stored ×10 and scaled back by Memfault (for example, 425 → 42.5 %RH).
+`firmware/CMakeLists.txt` adds `config/` to the include path so the Memfault SDK
+finds the definition file. The metrics are sent with each heartbeat (hourly, or
+on demand with `mflt test heartbeat` followed by `mflt post_chunks`). The
+existing nRF Cloud `DRYSPOOL_*` messages are unchanged.
+
+`mflt metrics_dump` on the board shows the values stored for the next heartbeat
+(`424` = 42.4 %RH, `234` = 23.4 °C, `728` g of filament):
+
+![DrySpool heartbeat metrics on the board](image/fleet/metrics-dump.png)
+
+
+Fleet-level Metric Charts (*DrySpool Humidity (%RH)*, *Temperature*, *Filament
+Remaining*) were added to the Metrics dashboard; they display percentiles once
+more devices report the new metrics.
+
+### 4. Extra credit
+
+Not yet implemented. Candidates: a staged rollout (activating a release for a
+percentage of a cohort) once a second board runs `0.1.4`.
+
+### Verification status
+
+- [x] OTA `0.1.2+0` → `0.1.3+0` → `0.1.4+0` on `9A4E619BA05C2E84` through cohort
+  `deepa-test`; each update was confirmed and survived a hardware reset.
+- [x] Release coverage reached 100% (1 of 1) for the target cohort while the
+  other boards in `default` were unaffected.
+- [x] Deliberate assert captured as a flash-backed coredump, uploaded, and
+  symbolicated in Memfault Issues.
+- [x] Humidity, temperature, and remaining filament are recorded as Memfault
+  heartbeat metrics (`mflt metrics_dump`) and appear in Memfault's metric list.
+- [ ] Second team board running `0.1.4+0` for the MVP demo.
+- [ ] Extra-credit feature (e.g. staged rollout).
+
+### Notes for teammates
+
+- Provision each board with `--id-str "<Device ID from the boot log>"` so its
+  certificate matches the hardware ID used by the firmware; add `--delete` when
+  re-provisioning a board.
+- Upload the `.elf` of every released build; without it, crashes show
+  "Symbols Missing".
+- Activate test releases for a dedicated cohort, not `default`.

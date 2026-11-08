@@ -10,6 +10,7 @@
 #include <helpers/nrfx_reset_reason.h>
 #include <date_time.h>
 #include <net/nrf_cloud_codec.h>
+#include <memfault/metrics/metrics.h>
 
 #include "application.h"
 #include "cloud_connection.h"
@@ -50,6 +51,14 @@ static void send_dryspool_sample(const struct dryspool_reading *reading)
 		(double)reading->temperature_c, (double)reading->humidity_pct,
 		(double)reading->filament_remaining_g,
 		reading->dehumidifier_on ? "on" : "off");
+
+	/* Forward critical DrySpool data to Memfault as heartbeat metrics (x10 scaled). */
+	MEMFAULT_METRIC_SET_UNSIGNED(dryspool_humidity_pct,
+				     (uint32_t)(reading->humidity_pct * 10.0));
+	MEMFAULT_METRIC_SET_SIGNED(dryspool_temperature_c,
+				   (int32_t)(reading->temperature_c * 10.0));
+	MEMFAULT_METRIC_SET_UNSIGNED(dryspool_filament_g,
+				     (uint32_t)reading->filament_remaining_g);
 
 	(void)send_numeric_sample("DRYSPOOL_TEMPERATURE_C", reading->temperature_c);
 	(void)send_numeric_sample("DRYSPOOL_HUMIDITY_PCT", reading->humidity_pct);
