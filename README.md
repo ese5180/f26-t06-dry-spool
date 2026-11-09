@@ -284,7 +284,91 @@ fault registers (CFSR, HFSR, SHCSR), and a memory view.
 
 ![Issue details: device, cohort, and version](image/fleet/coredump-issue.png)
 
-### 3. Forwarding critical device data
+### 3. MCU reboot reasons
+
+Every time the nRF5340 restarts, Memfault records *why* it restarted and uploads
+it with the next chunks. No application code is needed; it is enabled by the
+Memfault NCS integration:
+
+| Setting | Effect |
+| --- | --- |
+| `CONFIG_MEMFAULT_REBOOT_REASON_GET_HWINFO=y` | At boot, reads the hardware reset cause (nRF5340 `RESETREAS` register) through Zephyr's `hwinfo` driver: pin reset, power-on, watchdog, lockup, and so on |
+| Memfault reboot tracking (SDK default) | Before a software-initiated reset (assert, fault, `sys_reboot`, MCUboot swap after OTA), the SDK stores the reason in no-init RAM so it survives the reset |
+
+The board also prints the raw value at startup (`print_reset_reason()` in
+`firmware/src/application.c`, e.g. `Reset reason: 0x1`).
+
+Reboots recorded for `9A4E619BA05C2E84`, each tied to the action that caused it:
+
+| Reason in Memfault | Cause during testing |
+| --- | --- |
+| **Pin Reset** | RESET button on the DK, or a reset from the programmer after flashing |
+| **Assert** | `mflt test assert` (the coredump test in section 2) |
+| **Software Reset** | Reboot into MCUboot to install an OTA update, or `kernel reboot` |
+
+Unexpected reboots (Assert, faults, watchdog) are also counted in the
+`Unexpected Reboot Count` and `operational_crashfree_hours` metrics, so crash
+rates can be compared between firmware versions. In the Processing Log each one
+appears as *Received reboot event*.
+
+### 4. Metrics
+
+Memfault collects metrics in RAM and sends them as a **heartbeat**: one summary
+value per metric per interval. Three groups are reported.
+
+#### 4.1 Power status (battery state of charge)
+
+The nRF7002 DK has no battery: it is always USB powered. To report power status
+through Memfault's standard battery metrics, firmware `0.1.6` enables
+`CONFIG_MEMFAULT_METRICS_BATTERY_ENABLE=y` (in `firmware/coap.conf`) and
+implements the platform hook in `firmware/src/dryspool_power.c`:
+
+```c
+int memfault_platform_get_stateofcharge(sMfltPlatformBatterySoc *soc)
+{
+	soc->soc = 100 * CONFIG_MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE;
+	soc->discharging = false; /* USB powered -> never discharging */
+	return 0;
+}
+```
+
+The SDK calls this hook at boot and at every heartbeat and reports
+`battery_soc_pct = 100` with *not discharging*. It also reports the discharge
+metrics, `battery_soc_pct_drop` and `battery_discharge_duration_ms`; while the
+board is on USB those sessions are skipped. In other words, the board reports
+"externally powered". This is a **placeholder**: the DrySpool PCB will read a
+real fuel gauge in the same function, and nothing else has to change.
+
+Status: `0.1.6` is built and committed (Kconfig confirmed in the build
+`.config`); its OTA release was not yet activated at the time of the check-off,
+so no `battery_soc_pct` data is shown here.
+
+#### 4.2 Zephyr / NCS default metrics
+
+With `CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE=y` and
+`CONFIG_MEMFAULT_NCS_USE_DEFAULT_METRICS=y`, the SDK adds these to every heartbeat
+without any application code:
+
+| Group | Metrics (examples received from the board) | What it tells us |
+| --- | --- | --- |
+| CPU and uptime | `cpu_usage_pct`, `uptime_s`, `boot_time_ms` | Load, and how long the device takes to become ready |
+| Thread stacks | `memory_idle_pct_max`, `memory_sysworkq_pct_max`, `memory_mflt_upload_pct_max`, `ncs_connection_poll_unused_stack`, `ncs_bt_rx_unused_stack`, `ncs_bt_lw_wq_unused_stack` | How close each thread came to overflowing its stack |
+| Wi-Fi | `wifi_sta_rssi`, `wifi_tx_rate_mbps`, `wifi_primary_channel`, `wifi_beacon_interval`, `wifi_dtim_interval`, `wifi_twt_capable`, `wifi_connected_time_ms`, `wifi_disconnect_count` | Link quality and stability in the makerspace |
+| Connectivity | `connectivity_connected_time_ms`, `connectivity_expected_time_ms` | Share of time the device was online |
+| Upload health | `sync_memfault_successful`, `sync_memfault_failure`, `sync_successful`, `sync_failure` | Whether uploads succeed (failures were seen while Wi-Fi was down) |
+| Reliability | `operational_hours`, `operational_crashfree_hours`, `Unexpected Reboot Count`, heartbeat `Duration` | Crash-free hours across the fleet |
+
+`CONFIG_MEMFAULT_METRICS_MEMORY_USAGE` (heap usage) is disabled because Memfault
+1.40 does not compile against Zephyr 4.4's system heap; thread-stack metrics
+remain enabled.
+
+The Processing Log shows the heartbeats arriving as *Received Metric Report
+(Heartbeat)*, together with the reboot event and an OTA check; the device
+Timeline plots each metric:
+
+![Heartbeats received in the Processing Log](image/fleet/processing-log.png)
+
+#### 4.3 Forwarding critical device data
 
 Humidity is DrySpool's most important value: it shows whether stored filament
 stays dry. Starting with `0.1.4`, the firmware forwards it, together with
@@ -335,7 +419,80 @@ Fleet-level Metric Charts (*DrySpool Humidity (%RH)*, *Temperature*, *Filament
 Remaining*) were added to the Metrics dashboard; they display percentiles once
 more devices report the new metrics.
 
-### 4. Extra credit
+### 5. Firmware comprehension
+
+The firmware is based on the NCS `samples/wifi/nrf_cloud` sample (CoAP variant)
+with the DrySpool application and Memfault added. It runs as separate Zephyr
+threads, started in `firmware/src/main.c` with `K_THREAD_DEFINE`:
+
+| Thread | Function (file) | Job |
+| --- | --- | --- |
+| `con_thread` | `cloud_connection_thread_fn` (`cloud_connection.c`) | Connects Wi-Fi, then nRF Cloud over CoAP/DTLS; reconnects on loss; enables Memfault uploads in `cloud_ready()` |
+| `app_thread` | `main_application_thread_fn` (`application.c`) | Prints the reset reason, initializes sensors, confirms an OTA image, waits for the cloud, then samples every 60 s |
+| `msg_thread` | `message_queue_thread_fn` (`message_queue.c`) | Sends queued messages to nRF Cloud |
+| `coap_shadow` | `coap_shadow_thread_fn` (`shadow_support_coap.c`) | Syncs the device shadow (configuration) |
+| `led_thread` | `led_animation_thread_fn` (`led_control.c`) | Status LEDs |
+| Memfault upload workqueue | SDK (`memfault_periodic_upload.c`) | Every 300 s: posts chunks to Memfault and checks for OTA |
+
+**One sensor sample takes two routes to the cloud:**
+
+```text
+dryspool_sensors_read()                         application.c, every 60 s
+  └─ send_dryspool_sample()
+       ├─ LOG_INF("DrySpool: ...")                -> serial monitor (local only)
+       ├─ Route A: send_numeric_sample("DRYSPOOL_HUMIDITY_PCT", ...)
+       │     └─ send_device_message()  -> k_msgq      message_queue.c
+       │          └─ nrf_cloud_coap_obj_send()  -> nRF Cloud (CoAP/DTLS, UDP)
+       │                                            raw value every 60 s
+       └─ Route B: MEMFAULT_METRIC_SET_UNSIGNED(dryspool_humidity_pct, ...)
+             └─ stored in RAM; every 300 s the SDK closes a heartbeat,
+                packs it into chunks, and posts them over HTTPS
+                -> Memfault: one summary value per heartbeat
+```
+
+| | Route A: nRF Cloud messages | Route B: Memfault |
+| --- | --- | --- |
+| Purpose | Product data (current humidity of a box) | Fleet health (crashes, reboots, metrics, OTA) |
+| Code | Team code (`application.c`, `message_queue.c`) | Memfault SDK, fed by `MEMFAULT_METRIC_SET_*` and configured with Kconfig |
+| Rate | Every 60 s | Heartbeat and upload every 300 s (`0.1.6`) |
+| Transport | CoAP over DTLS (UDP) | HTTPS (TCP) |
+| Where to view | Legacy nRF Cloud → device → Terminal (d2c) | Memfault → device → Timeline, Reboots, Issues |
+
+**Memfault data path on the device:**
+
+1. *Collect.* Metrics live in RAM; coredumps go to the 8 KiB flash partition at
+   `0xFA000`; reboot reasons are captured at boot (section 3).
+2. *Heartbeat.* `CONFIG_MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS=300` closes the
+   interval and serializes all metrics.
+3. *Chunks.* The packetizer splits heartbeats, reboot events and coredumps into
+   chunks.
+4. *Upload.* `CONFIG_MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS=300` posts the chunks
+   over HTTPS. Uploads start only after `cloud_ready()` calls
+   `memfault_zephyr_port_periodic_upload_enable(true)`
+   (`CONFIG_MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT=n`), so they do not race
+   Wi-Fi at boot. `mflt post_chunks` does the same on demand.
+5. *Decode.* Memfault matches the GNU build ID to the uploaded `zephyr.elf`;
+   without it, data is held with *Symbol file missing* (seen before the `0.1.4`
+   symbols were uploaded).
+
+**OTA path:** the periodic upload task checks for a release for this device's
+cohort. If one exists, the image is downloaded over HTTPS into external-flash
+slot 1, MCUboot verifies the ECDSA-P256 signature and swaps it in (test mode),
+and `memfault_fota_support_init()` confirms it after the sensor layer starts.
+If the new image fails before confirmation, MCUboot reverts to the previous one.
+
+**Configuration files:**
+
+| File | Role |
+| --- | --- |
+| `firmware/prj.conf` | Base Wi-Fi, nRF Cloud, and logging configuration |
+| `firmware/coap.conf` | CoAP transport and all Memfault settings (intervals, battery, coredump, shell) |
+| `firmware/coap-fota.conf` | FOTA support (`CONFIG_SAMPLE_MEMFAULT_FOTA`) |
+| `firmware/local.conf` | Project key only; git-ignored |
+| `firmware/config/memfault_metrics_heartbeat_config.def` | Custom DrySpool metrics |
+| `firmware/VERSION`, `firmware/Kconfig` | Version (`0.1.6`), used by MCUboot and by Memfault |
+
+### 6. Extra credit
 
 Not yet implemented. Candidates: a staged rollout (activating a release for a
 percentage of a cohort) once a second board runs `0.1.4`.
@@ -348,8 +505,14 @@ percentage of a cohort) once a second board runs `0.1.4`.
   other boards in `default` were unaffected.
 - [x] Deliberate assert captured as a flash-backed coredump, uploaded, and
   symbolicated in Memfault Issues.
+- [x] Reboot reasons (Pin Reset, Assert, Software Reset) recorded and shown
+  in the device Reboots tab.
+- [x] Zephyr/NCS default metrics and DrySpool metrics received as heartbeats
+  (Processing Log: *Received Metric Report (Heartbeat)*) and shown on the Timeline.
 - [x] Humidity, temperature, and remaining filament are recorded as Memfault
   heartbeat metrics (`mflt metrics_dump`) and appear in Memfault's metric list.
+- [x] Power-status metric implemented and built in `0.1.6`.
+- [ ] `0.1.6` OTA release activated, and `battery_soc_pct` visible in Memfault.
 - [ ] Second team board running `0.1.4+0` for the MVP demo.
 - [ ] Extra-credit feature (e.g. staged rollout).
 
@@ -360,4 +523,5 @@ percentage of a cohort) once a second board runs `0.1.4`.
   re-provisioning a board.
 - Upload the `.elf` of every released build; without it, crashes show
   "Symbols Missing".
-- Activate test releases for a dedicated cohort, not `default`.
+- Activate a new release for the test cohort (`deepa-test`) first; activate it
+  for `default` only after it has been confirmed on the test board.
