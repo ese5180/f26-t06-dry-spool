@@ -311,9 +311,19 @@ MEMFAULT_METRIC_SET_UNSIGNED(dryspool_filament_g,
 
 Values are stored ×10 and scaled back by Memfault (for example, 425 → 42.5 %RH).
 `firmware/CMakeLists.txt` adds `config/` to the include path so the Memfault SDK
-finds the definition file. The metrics are sent with each heartbeat (hourly, or
-on demand with `mflt test heartbeat` followed by `mflt post_chunks`). The
-existing nRF Cloud `DRYSPOOL_*` messages are unchanged.
+finds the definition file.
+
+Timing (firmware `0.1.6`, set in `firmware/coap.conf`):
+
+| Step | Interval | Setting |
+| --- | --- | --- |
+| Sensor sample (serial log, nRF Cloud `DRYSPOOL_*` message, metric update) | 60 s | `CONFIG_SENSOR_SAMPLE_INTERVAL_SECONDS` |
+| Memfault heartbeat (one data point per metric) | 300 s | `CONFIG_MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS=300` |
+| Automatic upload to Memfault (and OTA check) | 300 s, once the cloud connection is ready | `CONFIG_MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS=300` |
+
+Earlier versions used the Memfault default of one hour for both. A heartbeat
+can also be sent on demand with `mflt test heartbeat` followed by
+`mflt post_chunks`. The existing nRF Cloud `DRYSPOOL_*` messages are unchanged.
 
 `mflt metrics_dump` on the board shows the values stored for the next heartbeat
 (`424` = 42.4 %RH, `234` = 23.4 °C, `728` g of filament):

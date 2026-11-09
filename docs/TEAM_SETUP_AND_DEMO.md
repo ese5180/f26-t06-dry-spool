@@ -41,25 +41,30 @@ Organization Auth Token (OAT) in Drive or Git.
    ```powershell
    git clone https://github.com/ese5180/f26-t06-dry-spool.git
    cd f26-t06-dry-spool
-   git switch wireless-update
-   git pull --ff-only origin wireless-update
+   git switch main
+   git pull --ff-only origin main
    ```
 
-4. Download `rdyspool-signing.pem` from the restricted Drive folder and place
+4. Download `dryspool-signing.pem` from the restricted Drive folder and place
    it at:
 
    ```text
    firmware/keys/dryspool-signing.pem
    ```
 
-5. Create the local cloud configuration:
+5. Create the local cloud configuration. The repository has no example file,
+   so create `firmware/local.conf` yourself with this single line:
 
-   ```powershell
-   Copy-Item firmware\local.conf.example firmware\local.conf
+   ```text
+   CONFIG_MEMFAULT_NCS_PROJECT_KEY="<PROJECT_KEY>"
    ```
 
-   Copy the active Project Key from **nRF Cloud → Project Settings → Project
-   Keys** into `firmware/local.conf`.
+   Replace `<PROJECT_KEY>` with the active key from **nRF Cloud → Project
+   Settings → Project Keys** (keep the quotes). From PowerShell:
+
+   ```powershell
+   Set-Content -Path firmware\local.conf -Value 'CONFIG_MEMFAULT_NCS_PROJECT_KEY="<PROJECT_KEY>"'
+   ```
 
 6. Confirm both secret files are ignored:
 
@@ -248,11 +253,11 @@ firmware release once, then deploy it to a cohort rather than per device.
      .\build-dryspool\firmware\zephyr\zephyr.signed.bin
    ```
 
-5. Deploy to the desired cohort:
+5. Deploy to the test cohort first (`deepa-test` holds one test board):
 
    ```powershell
    nrfcloud --org-token $env:DRYSPOOL_OAT --org zicong-zhang --project default-project `
-     deploy-release --release-version '<NEW_VERSION>' --cohort default --rollout-percent 100
+     deploy-release --release-version '<NEW_VERSION>' --cohort deepa-test --rollout-percent 100
 
    Remove-Item Env:\DRYSPOOL_OAT
    ```
