@@ -510,7 +510,7 @@ percentage of a cohort) once a second board runs `0.1.4`.
 - [x] Reboot reasons (Pin Reset, Assert, Software Reset) recorded and shown
   in the device Reboots tab.
 - [x] Zephyr/NCS default metrics and DrySpool metrics received as heartbeats
-  (Processing Log: *Received Metric Report (Heartbeat)*) and shown on the Timeline.
+  (Processing Log: *Received Metric Report (Heartbeat)*).
 - [x] Humidity, temperature, and remaining filament are recorded as Memfault
   heartbeat metrics (`mflt metrics_dump`) and appear in Memfault's metric list.
 - [x] Power-status metric implemented and built in `0.1.6`.
