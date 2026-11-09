@@ -305,11 +305,14 @@ Reboots recorded for `9A4E619BA05C2E84`, each tied to the action that caused it:
 | **Pin Reset** | RESET button on the DK, or a reset from the programmer after flashing |
 | **Assert** | `mflt test assert` (the coredump test in section 2) |
 | **Software Reset** | Reboot into MCUboot to install an OTA update, or `kernel reboot` |
+| **Unspecified** | Reset with no recorded cause (no hardware flag and no saved software reason) |
 
 Unexpected reboots (Assert, faults, watchdog) are also counted in the
 `Unexpected Reboot Count` and `operational_crashfree_hours` metrics, so crash
 rates can be compared between firmware versions. In the Processing Log each one
 appears as *Received reboot event*.
+
+![Reboot reasons for the test board](image/fleet/reboots.png)
 
 ### 4. Metrics
 
@@ -363,8 +366,7 @@ without any application code:
 remain enabled.
 
 The Processing Log shows the heartbeats arriving as *Received Metric Report
-(Heartbeat)*, together with the reboot event and an OTA check; the device
-Timeline plots each metric:
+(Heartbeat)*, together with the reboot event and an OTA check:
 
 ![Heartbeats received in the Processing Log](image/fleet/processing-log.png)
 
