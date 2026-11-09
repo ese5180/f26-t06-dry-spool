@@ -42,6 +42,10 @@ if(CONFIG_SAMPLE_MEMFAULT_FOTA)
   target_sources(app PRIVATE src/memfault_fota_support.c)
 endif()
 
+if(CONFIG_MEMFAULT_METRICS_BATTERY_ENABLE)
+  target_sources(app PRIVATE src/dryspool_power.c)
+endif()
+
 if(CONFIG_SAMPLE_MEMFAULT_BUTTONS)
   target_sources(app PRIVATE src/memfault_buttons.c)
 endif()
