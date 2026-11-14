@@ -1,0 +1,189 @@
+/* DrySpool cloud worker, using the nRF Cloud CoAP and Memfault HTTPS
+ * transports from the team's Nordic Wi-Fi firmware.
+ */
+#include <errno.h>
+#include <date_time.h>
+#include <memfault/metrics/metrics.h>
+#include <memfault/ports/zephyr/periodic_upload.h>
+#include <net/nrf_cloud_coap.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/conn_mgr_connectivity.h>
+#include <zephyr/net/conn_mgr_monitor.h>
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/net_mgmt.h>
+
+#include "cloud_connection.h"
+#include "telemetry.h"
+#if defined(CONFIG_SAMPLE_MEMFAULT_BUTTONS)
+#include "memfault_buttons.h"
+#endif
+
+LOG_MODULE_REGISTER(dryspool_cloud, CONFIG_WIFI_NRF_CLOUD_LOG_LEVEL);
+
+#define LINK_UP BIT(0)
+#define SESSION_LOST BIT(1)
+#define CLOUD_READY BIT(2)
+#define REBOOT_PENDING BIT(3)
+#define RETRY K_SECONDS(CONFIG_CLOUD_CONNECTION_RETRY_TIMEOUT_SECONDS)
+
+static K_EVENT_DEFINE(events);
+static struct net_mgmt_event_callback l4_cb;
+
+static void link_changed(struct net_mgmt_event_callback *cb, uint64_t event,
+			 struct net_if *iface)
+{
+	if (event == NET_EVENT_L4_CONNECTED) {
+		k_event_post(&events, LINK_UP);
+	} else if (event == NET_EVENT_L4_DISCONNECTED) {
+		/* Keep SESSION_LOST latched even if Wi-Fi comes back before the
+		 * sender wakes up. The previous DTLS session must be replaced.
+		 */
+		k_event_set_masked(&events, SESSION_LOST, LINK_UP | CLOUD_READY | SESSION_LOST);
+	}
+}
+
+/* Used by the existing Memfault button and FOTA completion handlers. */
+bool await_cloud_ready(k_timeout_t timeout)
+{
+	return k_event_wait(&events, CLOUD_READY, false, timeout) != 0;
+}
+
+void disconnect_cloud(void)
+{
+	/* Invoked on verified download completion, shortly before reboot. */
+	k_event_set_masked(&events, SESSION_LOST | REBOOT_PENDING,
+			   CLOUD_READY | SESSION_LOST | REBOOT_PENDING);
+	(void)nrf_cloud_coap_disconnect();
+}
+
+static int send_latest(void)
+{
+	struct dryspool_sample s;
+	struct dryspool_channel channels[DRYSPOOL_CHANNEL_COUNT];
+
+	if (!dryspool_read_latest(&s)) {
+		return 0;
+	}
+	size_t n = dryspool_telemetry_channels(&s, k_uptime_get(), channels);
+	if (!n) {
+		LOG_WRN("No fresh local sample for telemetry");
+		return 0;
+	}
+
+	int64_t timestamp = s.uptime_ms;
+	if (date_time_uptime_to_unix_time_ms(&timestamp)) {
+		LOG_WRN("Sample time unavailable");
+		return 0;
+	}
+	if (s.env_valid) {
+		MEMFAULT_METRIC_SET_SIGNED(dryspool_temperature_c, s.temperature_mc / 100);
+		MEMFAULT_METRIC_SET_UNSIGNED(dryspool_humidity_pct, s.humidity_mpct / 100);
+	}
+	if (s.grams_valid) {
+		MEMFAULT_METRIC_SET_UNSIGNED(dryspool_filament_g, s.filament_g);
+	}
+
+	for (size_t i = 0; i < n; i++) {
+		if (k_event_test(&events, SESSION_LOST)) {
+			return -ENETDOWN;
+		}
+		/* A confirmable message can wait for retransmissions. Skip the
+		 * rest of this cycle if the snapshot has aged out meanwhile.
+		 */
+		if (!dryspool_sample_is_fresh(&s, k_uptime_get())) {
+			break;
+		}
+		int rc = nrf_cloud_coap_sensor_send(channels[i].app_id, channels[i].value,
+						    timestamp, true);
+		if (rc) {
+			LOG_WRN("CoAP send %s failed: %d", channels[i].app_id, rc);
+			return rc;
+		}
+	}
+	return 0;
+}
+
+static void run_session(void)
+{
+	int rc = nrf_cloud_coap_connect(CONFIG_APP_VERSION);
+
+	if (rc) {
+		LOG_WRN("nRF Cloud connect failed: %d", rc);
+	} else if (!k_event_test(&events, SESSION_LOST)) {
+		LOG_INF("Connected to nRF Cloud; starting telemetry and Memfault release checks");
+		k_event_post(&events, CLOUD_READY);
+		memfault_zephyr_port_periodic_upload_enable(true);
+		do {
+			if (send_latest()) {
+				break;
+			}
+		} while (!k_event_wait(&events, SESSION_LOST, false,
+				       K_SECONDS(CONFIG_SENSOR_SAMPLE_INTERVAL_SECONDS)));
+	}
+
+	k_event_clear(&events, CLOUD_READY);
+	memfault_zephyr_port_periodic_upload_enable(false);
+	(void)nrf_cloud_coap_disconnect();
+}
+
+static void cloud_worker(void *a, void *b, void *c)
+{
+	net_mgmt_init_event_callback(&l4_cb, link_changed,
+				     NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED);
+	net_mgmt_add_event_callback(&l4_cb);
+	int rc;
+
+	while ((rc = nrf_cloud_coap_init()) != 0) {
+		LOG_WRN("nRF Cloud initialization failed: %d", rc);
+		k_sleep(RETRY);
+	}
+	if (IS_ENABLED(CONFIG_NRF_CLOUD_CHECK_CREDENTIALS)) {
+		while ((rc = nrf_cloud_credentials_configured_check()) != 0) {
+			if (rc == -ENOPROTOOPT) {
+				/* SDK infers which CA is present from its size. Let
+				 * DTLS validate the actual provisioned trust chain.
+				 */
+				LOG_WRN("Check CA bundle for CoAP; attempting verified connection");
+				break;
+			}
+			LOG_WRN("Waiting for device credentials: %d", rc);
+			k_sleep(RETRY);
+		}
+	}
+	conn_mgr_all_if_connect(true);
+	conn_mgr_mon_resend_status();
+
+	while (!k_event_test(&events, REBOOT_PENDING)) {
+		if (!k_event_wait(&events, LINK_UP, false, RETRY)) {
+			/* Also recover from a missing AP or missing Wi-Fi profile at boot. */
+			conn_mgr_all_if_connect(true);
+			continue;
+		}
+		k_event_clear(&events, SESSION_LOST);
+		if (!k_event_test(&events, LINK_UP)) {
+			continue;
+		}
+		if (!date_time_is_valid()) {
+			date_time_update_async(NULL);
+		} else {
+			run_session();
+		}
+		k_sleep(RETRY);
+	}
+}
+
+/* Preemptible, below the local control loop. No network calls or waiting
+ * for connectivity in main() or inside the snapshot's critical section.
+ */
+K_THREAD_DEFINE(cloud_thread, CONFIG_CONNECTION_THREAD_STACK_SIZE, cloud_worker,
+		NULL, NULL, NULL, 5, 0, 0);
+
+#if defined(CONFIG_SAMPLE_MEMFAULT_BUTTONS)
+static void button_worker(void *a, void *b, void *c)
+{
+	memfault_buttons_thread_fn();
+}
+K_THREAD_DEFINE(button_thread, CONFIG_SAMPLE_MEMFAULT_BUTTONS_THREAD_STACK_SIZE, button_worker,
+		NULL, NULL, NULL, 5, 0, 0);
+#endif

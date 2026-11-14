@@ -1,0 +1,15 @@
+&arduino_i2c {
+	env: bme280@76 {
+		compatible = "bosch,bme280";
+		reg = <0x76>;
+	};
+	scale: adc@2a {
+		reg = <0x2a>;
+	};
+};
+
+/ {
+	zephyr,user {
+		fan-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>; /* Arduino A0 -> driver IN */
+	};
+};

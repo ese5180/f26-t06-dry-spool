@@ -1,0 +1,9 @@
+config DRYSPOOL_CLOUD
+	bool
+	default y if BOARD_NRF7002DK_NRF5340_CPUAPP_NS
+
+# Match the VERSION file used to sign the MCUboot image and identify OTA releases.
+config APP_VERSION
+	default "$(APPVERSION)"
+
+rsource "../firmware/Kconfig"
