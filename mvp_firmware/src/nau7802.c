@@ -2,7 +2,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
-#include "nau7802.h"
+#include "scale.h"
 
 static const struct i2c_dt_spec adc = I2C_DT_SPEC_GET(DT_NODELABEL(scale));
 enum { POWER = 0, CTRL1 = 1, CTRL2 = 2, DATA = 0x12, ADC_CFG = 0x15 };
@@ -20,7 +20,7 @@ static int wait_bit(uint8_t reg, uint8_t mask, bool set, int timeout_ms)
 	return -ETIMEDOUT;
 }
 
-int nau_start(void)
+static int nau_start(void)
 {
 	if (!i2c_is_ready_dt(&adc)) return -ENODEV;
 	int rc = i2c_reg_write_byte_dt(&adc, POWER, BIT(0)); /* reset */
@@ -42,7 +42,7 @@ int nau_start(void)
 	return rc ? rc : ((status & BIT(3)) ? -EIO : 0);
 }
 
-int nau_average(int32_t *counts)
+static int nau_average(int32_t *counts)
 {
 	int32_t sum = 0;
 	for (int i = 0; i < 6; i++) {
@@ -57,4 +57,20 @@ int nau_average(int32_t *counts)
 	}
 	*counts = sum / 5;
 	return 0;
+}
+
+static K_MUTEX_DEFINE(scale_lock);
+static bool adc_ready;
+
+int scale_sample(int32_t *raw)
+{
+	k_mutex_lock(&scale_lock, K_FOREVER);
+	int rc = adc_ready ? 0 : nau_start();
+
+	if (rc == 0) {
+		rc = nau_average(raw);
+	}
+	adc_ready = (rc == 0);
+	k_mutex_unlock(&scale_lock);
+	return rc;
 }

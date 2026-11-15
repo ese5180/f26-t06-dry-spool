@@ -41,3 +41,8 @@ static inline size_t dryspool_telemetry_channels(const struct dryspool_sample *s
 	}
 	return n;
 }
+
+/* Send the fresh snapshot over an established CoAP connection. Returns a
+ * transport error to the connection worker if the session should be retried.
+ */
+int dryspool_telemetry_send_latest(bool (*session_ready)(void));

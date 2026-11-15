@@ -19,5 +19,8 @@ struct dryspool_sample {
 	bool fan_on; /* GPIO command, not a tachometer reading */
 };
 
+/* Stamps the completed cycle with uptime and publishes it for other threads. */
+void dryspool_publish_sample(struct dryspool_sample *sample);
+
 /* Copies a consistent snapshot. False before the first pass completes. */
 bool dryspool_read_latest(struct dryspool_sample *out);
