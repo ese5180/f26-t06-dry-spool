@@ -59,6 +59,8 @@ static void send_dryspool_sample(const struct dryspool_reading *reading)
 				   (int32_t)(reading->temperature_c * 10.0));
 	MEMFAULT_METRIC_SET_UNSIGNED(dryspool_filament_g,
 				     (uint32_t)reading->filament_remaining_g);
+	MEMFAULT_METRIC_SET_UNSIGNED(dryspool_dehumidifier_on,
+				     reading->dehumidifier_on ? 1U : 0U);
 
 	(void)send_numeric_sample("DRYSPOOL_TEMPERATURE_C", reading->temperature_c);
 	(void)send_numeric_sample("DRYSPOOL_HUMIDITY_PCT", reading->humidity_pct);
@@ -93,6 +95,7 @@ void main_application_thread_fn(void)
 
 	ret = dryspool_sensors_init();
 	if (ret) {
+		(void)MEMFAULT_METRIC_ADD(dryspool_sensor_read_failures, 1);
 		LOG_ERR("DrySpool sensor initialization failed: %d", ret);
 		return;
 	}
@@ -117,6 +120,7 @@ void main_application_thread_fn(void)
 
 		ret = dryspool_sensors_read(&reading);
 		if (ret) {
+			(void)MEMFAULT_METRIC_ADD(dryspool_sensor_read_failures, 1);
 			LOG_ERR("DrySpool sensor read failed: %d", ret);
 		} else {
 			send_dryspool_sample(&reading);

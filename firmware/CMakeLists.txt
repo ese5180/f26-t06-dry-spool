@@ -9,6 +9,10 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(dryspool)
 
+# Keep Memfault's Build-ID descriptor in LTO builds. The CLI uses this symbol
+# together with .note.gnu.build-id to match heartbeat data to this exact ELF.
+target_link_libraries(app INTERFACE "-Wl,--require-defined=g_memfault_build_id")
+
 # Exactly one of mqtt.conf or coap.conf must be selected
 if(NOT CONFIG_NRF_CLOUD_MQTT AND NOT CONFIG_NRF_CLOUD_COAP)
   message(FATAL_ERROR
