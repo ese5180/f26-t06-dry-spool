@@ -36,8 +36,11 @@ transport for diagnostics, release checks, and image downloads.
 
 Two ignored files are required:
 
-1. Copy `local.conf.example` to `local.conf` and set the nRF Cloud/Memfault
-   project key.
+1. Create `local.conf` with the nRF Cloud/Memfault project key:
+
+   ```text
+   CONFIG_MEMFAULT_NCS_PROJECT_KEY="<PROJECT_KEY>"
+   ```
 2. Obtain the team's `keys/dryspool-signing.pem` through the private team
    channel. If creating the key for the first time, follow `keys/README.md`.
 
@@ -68,7 +71,10 @@ The release artifact uploaded to Memfault is:
 ```
 
 Increment both `VERSION` and `CONFIG_APP_VERSION` before making a release so
-the new image has a distinct version in MCUboot and Memfault.
+the new image has a distinct version in MCUboot and Memfault. Upload the exact
+`zephyr.elf` from the same build as the signed binary; the build retains
+Memfault's Build-ID descriptor even with LTO enabled so cloud data can be
+matched to that ELF.
 
 ## Local hardware verification
 

@@ -4,3 +4,11 @@
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(dryspool_humidity_pct, kMemfaultMetricType_Unsigned, 10)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(dryspool_temperature_c, kMemfaultMetricType_Signed, 10)
 MEMFAULT_METRICS_KEY_DEFINE(dryspool_filament_g, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(dryspool_dehumidifier_on, kMemfaultMetricType_Unsigned)
+
+/* Fleet-health counters reset at each heartbeat. They distinguish a healthy
+ * device from one that is online but losing product data internally.
+ */
+MEMFAULT_METRICS_KEY_DEFINE(dryspool_sensor_read_failures, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(dryspool_cloud_send_failures, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(dryspool_cloud_queue_drops, kMemfaultMetricType_Unsigned)

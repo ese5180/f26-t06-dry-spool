@@ -222,14 +222,16 @@ firmware release once, then deploy it to a cohort rather than per device.
 1. Increment the version in both `firmware/VERSION` and the `APP_VERSION`
    default in `firmware/Kconfig`.
 2. Build pristine with the same team signing key.
-3. Verify the signed image:
+3. Verify the MCUboot signature and confirm that the exact release ELF contains
+   both the GNU and Memfault Build IDs:
 
    ```powershell
-   python $env:ZEPHYR_BASE\..\bootloader\mcuboot\scripts\imgtool.py `
-     verify `
-     -k .\firmware\keys\dryspool-signing.pem `
-     .\build-dryspool\firmware\zephyr\zephyr.signed.bin
+   .\firmware\scripts\verify_release.ps1 -BuildDir .\build-dryspool
    ```
+
+   Do not upload an ELF from another build, even if its version string is the
+   same. Memfault uses the Build ID to decode that specific firmware's
+   heartbeats, coredumps, and traces.
 
 4. Set a temporary OAT, then upload symbols and firmware:
 

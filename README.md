@@ -317,7 +317,7 @@ appears as *Received reboot event*.
 ### 4. Metrics
 
 Memfault collects metrics in RAM and sends them as a **heartbeat**: one summary
-value per metric per interval. Three groups are reported.
+value per metric per interval. Four groups are reported.
 
 #### 4.1 Power status (battery state of charge)
 
@@ -342,9 +342,9 @@ board is on USB those sessions are skipped. In other words, the board reports
 "externally powered". This is a **placeholder**: the DrySpool PCB will read a
 real fuel gauge in the same function, and nothing else has to change.
 
-Status: `0.1.6` is built and committed (Kconfig confirmed in the build
-`.config`); its OTA release was not yet activated at the time of the check-off,
-so no `battery_soc_pct` data is shown here.
+Status: power reporting was introduced in `0.1.6`. Firmware `0.1.7` retains it
+and adds the release-integrity and fleet-health improvements below. Cloud
+verification of `battery_soc_pct` remains part of the release checklist.
 
 #### 4.2 Zephyr / NCS default metrics
 
@@ -382,6 +382,7 @@ enclosure temperature and remaining filament, as Memfault heartbeat metrics.
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(dryspool_humidity_pct, kMemfaultMetricType_Unsigned, 10)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(dryspool_temperature_c, kMemfaultMetricType_Signed, 10)
 MEMFAULT_METRICS_KEY_DEFINE(dryspool_filament_g, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(dryspool_dehumidifier_on, kMemfaultMetricType_Unsigned)
 ```
 
 `firmware/src/application.c` updates the metrics on every 60-second sample:
@@ -393,13 +394,15 @@ MEMFAULT_METRIC_SET_SIGNED(dryspool_temperature_c,
 			   (int32_t)(reading->temperature_c * 10.0));
 MEMFAULT_METRIC_SET_UNSIGNED(dryspool_filament_g,
 			     (uint32_t)reading->filament_remaining_g);
+MEMFAULT_METRIC_SET_UNSIGNED(dryspool_dehumidifier_on,
+			     reading->dehumidifier_on ? 1U : 0U);
 ```
 
 Values are stored ×10 and scaled back by Memfault (for example, 425 → 42.5 %RH).
 `firmware/CMakeLists.txt` adds `config/` to the include path so the Memfault SDK
 finds the definition file.
 
-Timing (firmware `0.1.6`, set in `firmware/coap.conf`):
+Timing (firmware `0.1.7`, set in `firmware/coap.conf`):
 
 | Step | Interval | Setting |
 | --- | --- | --- |
@@ -420,6 +423,22 @@ can also be sent on demand with `mflt test heartbeat` followed by
 Fleet-level Metric Charts (*DrySpool Humidity (%RH)*, *Temperature*, *Filament
 Remaining*) were added to the Metrics dashboard; they display percentiles once
 more devices report the new metrics.
+
+#### 4.4 Product-path health metrics
+
+Firmware `0.1.7` adds counters that make silent data-path failures visible at
+fleet scale:
+
+| Metric | Increments when | Operational use |
+| --- | --- | --- |
+| `dryspool_sensor_read_failures` | Sensor initialization or sampling fails | Detect failing or disconnected sensor hardware |
+| `dryspool_cloud_send_failures` | An nRF Cloud send attempt fails | Separate network/cloud instability from sensor faults |
+| `dryspool_cloud_queue_drops` | A product message cannot be queued or re-queued | Detect actual telemetry loss instead of relying only on logs |
+
+These counters reset at each heartbeat, so a dashboard or alert can identify
+which devices experienced failures during each five-minute interval. The
+dehumidifier state is also forwarded as `dryspool_dehumidifier_on`, allowing
+fleet views to correlate humidity with actuator behavior.
 
 ### 5. Firmware comprehension
 
@@ -456,7 +475,7 @@ dryspool_sensors_read()                         application.c, every 60 s
 | --- | --- | --- |
 | Purpose | Product data (current humidity of a box) | Fleet health (crashes, reboots, metrics, OTA) |
 | Code | Team code (`application.c`, `message_queue.c`) | Memfault SDK, fed by `MEMFAULT_METRIC_SET_*` and configured with Kconfig |
-| Rate | Every 60 s | Heartbeat and upload every 300 s (`0.1.6`) |
+| Rate | Every 60 s | Heartbeat and upload every 300 s (`0.1.7`) |
 | Transport | CoAP over DTLS (UDP) | HTTPS (TCP) |
 | Where to view | Legacy nRF Cloud → device → Terminal (d2c) | Memfault → device → Timeline, Reboots, Issues |
 
@@ -473,9 +492,11 @@ dryspool_sensors_read()                         application.c, every 60 s
    `memfault_zephyr_port_periodic_upload_enable(true)`
    (`CONFIG_MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT=n`), so they do not race
    Wi-Fi at boot. `mflt post_chunks` does the same on demand.
-5. *Decode.* Memfault matches the GNU build ID to the uploaded `zephyr.elf`;
-   without it, data is held with *Symbol file missing* (seen before the `0.1.4`
-   symbols were uploaded).
+5. *Decode.* Memfault matches the GNU build ID to the uploaded `zephyr.elf`.
+   LTO can otherwise remove Memfault's Build-ID descriptor, so
+   `firmware/CMakeLists.txt` retains `g_memfault_build_id` with the linker option
+   `--require-defined`. Upload the exact ELF from the same build as the release;
+   otherwise data is held with *Symbol file missing*.
 
 **OTA path:** the periodic upload task checks for a release for this device's
 cohort. If one exists, the image is downloaded over HTTPS into external-flash
@@ -492,12 +513,19 @@ If the new image fails before confirmation, MCUboot reverts to the previous one.
 | `firmware/coap-fota.conf` | FOTA support (`CONFIG_SAMPLE_MEMFAULT_FOTA`) |
 | `firmware/local.conf` | Project key only; git-ignored |
 | `firmware/config/memfault_metrics_heartbeat_config.def` | Custom DrySpool metrics |
-| `firmware/VERSION`, `firmware/Kconfig` | Version (`0.1.6`), used by MCUboot and by Memfault |
+| `firmware/VERSION`, `firmware/Kconfig` | Version (`0.1.7`), used by MCUboot and by Memfault |
 
-### 6. Extra credit
+### 6. Extra credit / rollout safety
 
-Not yet implemented. Candidates: a staged rollout (activating a release for a
-percentage of a cohort) once a second board runs `0.1.4`.
+- **Cohort-isolated canary deployment:** releases are first activated for the
+  single-device `deepa-test` cohort. The `0.1.2` → `0.1.3` → `0.1.4` sequence
+  reached 100% in that cohort while devices in `default` were unaffected.
+- **Power tracking:** the Memfault battery hook reports the DK as 100% and not
+  discharging while USB powered. The same hook is ready for a real fuel gauge on
+  the custom PCB.
+- **Next scaling step:** after at least two devices are on `0.1.7`, use a
+  percentage rollout inside a larger cohort and monitor crash-free hours,
+  send failures, queue drops, and sensor failures before expanding coverage.
 
 ### Verification status
 
@@ -513,17 +541,22 @@ percentage of a cohort) once a second board runs `0.1.4`.
   (Processing Log: *Received Metric Report (Heartbeat)*).
 - [x] Humidity, temperature, and remaining filament are recorded as Memfault
   heartbeat metrics (`mflt metrics_dump`) and appear in Memfault's metric list.
-- [x] Power-status metric implemented and built in `0.1.6`.
-- [ ] `0.1.6` OTA release activated, and `battery_soc_pct` visible in Memfault.
+- [x] Power-status metric implemented and retained in `0.1.7`.
+- [x] Release Build-ID is retained under LTO so heartbeats and coredumps can be
+  matched to the exact uploaded ELF.
+- [x] Sensor, cloud-send, queue-drop, and dehumidifier metrics implemented in
+  `0.1.7`.
+- [ ] `0.1.7` built, uploaded, activated for `deepa-test`, and its new metrics
+  verified in Memfault.
 - [ ] Second team board running `0.1.4+0` for the MVP demo.
-- [ ] Extra-credit feature (e.g. staged rollout).
+- [x] Extra-credit foundations: power tracking and cohort-isolated canary rollout.
 
 ### Notes for teammates
 
 - Provision each board with `--id-str "<Device ID from the boot log>"` so its
   certificate matches the hardware ID used by the firmware; add `--delete` when
   re-provisioning a board.
-- Upload the `.elf` of every released build; without it, crashes show
-  "Symbols Missing".
+- Upload the exact `.elf` of every released build; verify its Build ID matches
+  the device heartbeat before rollout, or data will show "Symbol file missing".
 - Activate a new release for the test cohort (`deepa-test`) first; activate it
   for `default` only after it has been confirmed on the test board.

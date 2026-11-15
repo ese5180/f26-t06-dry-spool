@@ -9,6 +9,7 @@
 #include <net/nrf_cloud_coap.h>
 #endif
 #include <date_time.h>
+#include <memfault/metrics/metrics.h>
 #include <zephyr/logging/log.h>
 #include <net/nrf_cloud_codec.h>
 
@@ -140,6 +141,7 @@ static int consume_device_message(void)
 #endif /* CONFIG_NRF_CLOUD_COAP */
 
 	if (ret < 0) {
+		(void)MEMFAULT_METRIC_ADD(dryspool_cloud_send_failures, 1);
 		LOG_ERR("Transmission of enqueued device message failed, nrf_cloud_send "
 			"gave error: %d. The message will be re-enqueued and tried again "
 			"later.", ret);
@@ -150,6 +152,7 @@ static int consume_device_message(void)
 		 */
 		ret = enqueue_device_message(queued_msg, false);
 		if (ret) {
+			(void)MEMFAULT_METRIC_ADD(dryspool_cloud_queue_drops, 1);
 			LOG_ERR("Could not re-enqueue message, discarding.");
 			free_queued_dev_msg_message(queued_msg);
 		}
@@ -195,6 +198,7 @@ int send_device_message(struct nrf_cloud_obj *const msg_obj)
 	int ret = enqueue_device_message(msg_obj, true);
 
 	if (ret) {
+		(void)MEMFAULT_METRIC_ADD(dryspool_cloud_queue_drops, 1);
 		LOG_ERR("Cannot add message to queue");
 		nrf_cloud_obj_free(msg_obj);
 	} else {
