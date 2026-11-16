@@ -1,0 +1,11 @@
+Closed-loop demo status — 2026-11-16
+Branch: closed-loop-bme-power, based on origin/main b4c61b0.
+Reachable: J-Link 1050794921, application UART COM7; PPK2 D2099C3C597B on COM16/COM8; real Saleae Logic 8 A98A7A192E89947C via Logic 2 port 10430.
+Candidate firmware uses Zephyr BME280 driver, i2c1 at configured 0x76, SDA P1.02 and SCL P1.03 (board pinctrl confirmed). Physical sensor identity/address/wiring NOT verified.
+Team signing public-key hash matched the documented hash. Ignored local signing key and Memfault project setting restored privately from sibling worktree; secrets remain uncommitted.
+Full NCS 3.4.0 sysbuild and flash succeeded. Application: flash 734232 B; RAM 394156 B. MCUboot: flash 39308 B.
+UART after flash repeatedly shows MCUboot version 0.1.7 handoff, then another boot. No application startup or BME probe/sample log. See boot-failure-uart.txt. Board currently resets repeatedly; recovery/debugging remains required.
+Logic 2: 8 s, CH0 SDA, CH1 SCL, 2 MHz; analyzer export contains only a header, no decoded I2C transactions. Address and ACK NOT verified. The small failed capture is retained as bme-boot.sal.
+Debugger reports VTref=3.300 V; user describes DK-side level-shifter reference as 1.8 V. These may be different rails; stop pending clarification before further hardware operations.
+PPK2 metadata read succeeds. No output/mode/voltage changes made; no power measurement performed. Average current before/after and percentage change are unavailable.
+No power optimization applied yet; baseline candidate uses normal BME280 mode and unchanged 60 s telemetry interval. Wi-Fi/cloud/Memfault/MCUboot/FOTA source paths were not altered, but runtime preservation cannot be claimed until boot is restored.
