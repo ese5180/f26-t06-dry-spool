@@ -1,0 +1,30 @@
+Normal-mode matching five-minute power capture.
+Firmware comparison variant from normal-mode.conf, previously flashed and
+verified build ID4078a278fc34aea8d704a05d2d9c171f941589bb. No intervening flash.
+Default source remains forced mode; currently flashed comparison image is normal.
+Three 30 s UART boots were verified before disconnecting USB. Live Windows
+Ports enumeration confirmed COM6/COM7 absent and PPK COM8/COM16 present.
+Same P21 polarity/input, P22/P23 installed, DK-powered BME without separate
+supply or level shifter, direct P1.02/P1.03, Logic CH0/CH1 and common ground.
+Existing Source Meter3.6V setting unchanged, metadata identical to forced300s.
+Same scripts, 2 s output-off preamble, nominal300 s acquisition, 302 s Logic
+capture at2MHz. PPK100ksample/s raw packets split into8MB files, no decimation.
+Output OFF after acquisition. Manifest hashes and counter continuity passed.
+Actual299.99616s, 29,999,616 packets, zero gaps. Full mean18.425551099078397mA,
+energy19.899340472186275J. Excluding first30s:269.99616s at14.895920769101599mA.
+46 address frames in forced capture versus22 address frames here; all ACK.
+Normal capture ID0x60 at0x77, F4=57 normal-mode write, one complete sensor
+initialization at2.2485615s and one delivered sample at2.528608s:
+23.69C /28.3125%RH. No later BME sample reads are visible.
+Whole-window energy/read19.899340J includes all DK startup/background loads;
+it is not isolated sensor energy and cannot be compared per read to the two
+startup reads in forced mode as a sampling-efficiency improvement.
+Forced full mean18.086114410204296mA is1.842206% below normal. With the same
+first30s excluded, forced14.830317252922898mA is0.440413% below normal.
+These are observed single-pair differences, not verified causal BME savings.
+Forced run has two sensor initializations; this normal run has one. Restart
+cause and five-minute application stability were not captured over UART.
+Do not infer periodic cloud reporting or repeatability from the idle bus.
+No Wi-Fi changes/diagnosis, TF-M/stack/partition changes or push.
+Factory PPK coefficients retained; Calibrated:0 metadata not rewritten;
+no independent voltage or calibration accuracy check.

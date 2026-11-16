@@ -1,0 +1,53 @@
+{
+  "duration_s": 299.99616,
+  "average_current_ma": 18.425551099078397,
+  "energy_j": 19.899340472186275,
+  "samples": 29999616,
+  "counter_discontinuities": 0,
+  "min_current_ma": -0.0009083866231593365,
+  "max_current_ma": 579.8089426755414,
+  "supply_v": 3.6,
+  "scope": "P21 whole DK input including DK-powered BME; USB disconnected; P22/P23 installed",
+  "window": "Five-minute power-on window including startup; output off afterward",
+  "conversion": "ppk2-api 0.9.2 factory coefficients and range-transition filter; 100 ksample/s",
+  "post_startup_30s_excluded": {
+    "duration_s": 269.99616,
+    "average_current_ma": 14.895920769101599,
+    "energy_j": 14.47862906635804
+  },
+  "minute_windows": [
+    {
+      "start_s": 0,
+      "duration_s": 60.0,
+      "average_current_ma": 37.332620252834865,
+      "energy_j": 8.063845974612331
+    },
+    {
+      "start_s": 60,
+      "duration_s": 60.0,
+      "average_current_ma": 13.760807803913254,
+      "energy_j": 2.9723344856452627
+    },
+    {
+      "start_s": 120,
+      "duration_s": 60.0,
+      "average_current_ma": 13.691399587407385,
+      "energy_j": 2.957342310879995
+    },
+    {
+      "start_s": 180,
+      "duration_s": 60.0,
+      "average_current_ma": 13.660519304904556,
+      "energy_j": 2.9506721698593843
+    },
+    {
+      "start_s": 240,
+      "duration_s": 59.99616,
+      "average_current_ma": 13.682104965779395,
+      "energy_j": 2.9551455311893027
+    }
+  ],
+  "delivered_sensor_samples": 1,
+  "window_energy_per_delivered_sample_j": 19.899340472186275,
+  "energy_scope": "Whole DK power-on window per delivered BME sample, not isolated sensor conversion energy"
+}

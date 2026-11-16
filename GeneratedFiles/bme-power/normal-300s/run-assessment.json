@@ -1,0 +1,12 @@
+{
+  "sensor_soft_reset_write_count": 1,
+  "sensor_soft_reset_times_s": [
+    2.2485615
+  ],
+  "completed_sample_times_s": [
+    2.528608
+  ],
+  "application_stability_verified_for_300s": false,
+  "observation": "One sensor initialization and one completed sample near startup; no further BME sample read in this capture. An idle bus cannot prove continued application responsiveness.",
+  "output_off_command_completed": true
+}

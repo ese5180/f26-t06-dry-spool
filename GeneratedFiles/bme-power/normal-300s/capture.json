@@ -1,0 +1,94 @@
+{
+  "requested_seconds": 300,
+  "supply_v": 3.6,
+  "dk_usb_absent": true,
+  "output_off_command_completed": true,
+  "raw_chunk_bytes": 8000000,
+  "sample_rate_hz": 100000,
+  "logic_sample_rate_hz": 2000000,
+  "chunks": [
+    {
+      "path": "ppk-raw-000.bin",
+      "bytes": 8000000,
+      "sha256": "f1ca6c72023b11272200ba3935575948e3b4f4734541d2b804ca9f5ea3e736a0"
+    },
+    {
+      "path": "ppk-raw-001.bin",
+      "bytes": 8000000,
+      "sha256": "8521c1ad6afeebc25b197a5b983917aa49204417e89c8ea88d569bbbf69f3a0f"
+    },
+    {
+      "path": "ppk-raw-002.bin",
+      "bytes": 8000000,
+      "sha256": "a55016df33a0cb6007ebc25f552aca6a4fec223e145160570a80e2ea08ff0baa"
+    },
+    {
+      "path": "ppk-raw-003.bin",
+      "bytes": 8000000,
+      "sha256": "c9d4a94b37524d3d8c75a990ed45ca64b2bd6658ff4390994d805378f6e858b0"
+    },
+    {
+      "path": "ppk-raw-004.bin",
+      "bytes": 8000000,
+      "sha256": "0f17a8c12e7a625cc5b5c3598cbf7d2c7fe16c3a8ab06112b394b4fc6e820e7b"
+    },
+    {
+      "path": "ppk-raw-005.bin",
+      "bytes": 8000000,
+      "sha256": "d073edddbc407a665f47a48930a0cecff3d61298a64bf51f8b7ddbb336a90cbf"
+    },
+    {
+      "path": "ppk-raw-006.bin",
+      "bytes": 8000000,
+      "sha256": "67caed9c23d84e685d7659ebccb93d55448b9b6762dc6ef8ba2f47a2f4beda0e"
+    },
+    {
+      "path": "ppk-raw-007.bin",
+      "bytes": 8000000,
+      "sha256": "f45cbe4d299abe8fef3b5b25d7624f4143cb179d0f3a75bbce0ca88eb03278e8"
+    },
+    {
+      "path": "ppk-raw-008.bin",
+      "bytes": 8000000,
+      "sha256": "4f92747b435ad84133f09988b5462c2e008d2b339089ab881c98761c2eacefa3"
+    },
+    {
+      "path": "ppk-raw-009.bin",
+      "bytes": 8000000,
+      "sha256": "f7a5a8fcfb7a0bbe0298e2fe504fe8d4d8afbb1ceb8693feb82088694d35ef4c"
+    },
+    {
+      "path": "ppk-raw-010.bin",
+      "bytes": 8000000,
+      "sha256": "89c8cdd2f65dcd7d1e5f1d9cc3c6dfa77c9f140cf676059643370b929e0c5317"
+    },
+    {
+      "path": "ppk-raw-011.bin",
+      "bytes": 8000000,
+      "sha256": "10597163b4b0aaff155d8a62dd7743aee71ae5cead8f7e311e5d772c5553b14c"
+    },
+    {
+      "path": "ppk-raw-012.bin",
+      "bytes": 8000000,
+      "sha256": "1e665da8d2a7ec84de0771bb4f6a8b228edc6adb9e8817b37c32bf52aca783e0"
+    },
+    {
+      "path": "ppk-raw-013.bin",
+      "bytes": 8000000,
+      "sha256": "c19b649043bd5196f7316f1f34c1265a402c4ae795368a8bb5527ede38f2f27f"
+    },
+    {
+      "path": "ppk-raw-014.bin",
+      "bytes": 7994369,
+      "sha256": "ba1dce52df19f0db529507c7d77953e4069f2e1f573fd8ab12e2b2061deea9b7"
+    },
+    {
+      "path": "ppk-raw-015.bin",
+      "bytes": 4095,
+      "sha256": "503b3ad808741e784c6c40d58f49ddec55567fe768603ec8c3e6ae725f6919c5"
+    }
+  ],
+  "logic_device_id": "A98A7A192E89947C",
+  "host_acquisition_seconds": 300.0939999999973,
+  "raw_bytes": 119998464
+}
