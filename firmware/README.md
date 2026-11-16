@@ -295,10 +295,11 @@ py -m pip install pyserial  # only needed once
 py firmware/demo_bme_serial.py --port COM7
 ```
 
-Press the DK RESET button **after** the script says it opened the port. The
-script checks `BME probe: address 0x77, chip ID 0x60`, shows the startup
-reading, then sends the `bme_read` UART shell command every two seconds for
-four more real temperature/humidity readings. It reports PASS after all four.
+The script sends `bme_read` to the DK UART shell every two seconds and prints
+each real temperature/humidity reading until Ctrl+C. You can start it while
+the board is already running; no RESET is needed. Use `--samples 4` to stop
+automatically after four readings. If you reset the DK while the script runs,
+it also displays the startup address/chip-ID check and startup reading.
 The `bme_read` command can also be typed manually in a serial monitor. If the
 DK UART has another COM number, substitute that number for COM7. The script
 does not flash, reset, or measure power. Wi-Fi is not needed for these local
