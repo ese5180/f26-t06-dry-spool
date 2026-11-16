@@ -34,3 +34,15 @@ Possible restart/reinitialization, cause not verified; five-minute application
 stability NOT established. No Wi-Fi diagnosis performed.
 No matching 300 s normal-mode run, so no new saving percentage calculated.
 Evidence: forced-300s/ including raw chunk manifest and run-assessment.json.
+
+Normal-mode comparison image built and flashed at operator request.
+GeneratedFiles/bme-power/normal-mode.conf overrides mode only; main prj.conf
+retains forced mode. sdk.ps1 build-normal / flash-normal reproduce this image.
+Normal build ID: 4078a278fc34aea8d704a05d2d9c171f941589bb.
+App FLASH734232 B, RAM394156 B; stacks and TF-M/partition layout unchanged.
+Three 30-second UART boot checks passed, responsive shell, no extra starts.
+Readings 23.66/23.67/23.67 C and 28.25/28.36/28.28 %RH; 0x77 ID0x60.
+Logic 22/22 address frames ACK and F4=57 normal-mode write verified.
+PPK output remains OFF. Await DK USB disconnect for matching normal 300 s
+power capture. Forced 300 s repeated-initialization limitation still applies;
+no matching long-mode power comparison yet. No Wi-Fi changes or push.

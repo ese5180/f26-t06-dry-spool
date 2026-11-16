@@ -348,3 +348,22 @@ python GeneratedFiles/bme-power/capture_long_power.py forced-repeat-300s 300
 python GeneratedFiles/bme-power/analyze_long_power.py forced-repeat-300s
 python GeneratedFiles/bme-power/decode_bme.py GeneratedFiles/bme-power/forced-repeat-300s
 ```
+
+Normal-mode comparison image preparation completed after the forced repeat:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File GeneratedFiles/bme-power/sdk.ps1 build-normal
+powershell -ExecutionPolicy Bypass -File GeneratedFiles/bme-power/sdk.ps1 flash-normal
+python GeneratedFiles/bme-power/verify_normal_boots.py
+```
+
+`normal-mode.conf` overrides mode only; `firmware/prj.conf` still defaults to
+forced mode. The build cache and currently flashed image are **normal mode**.
+The normal image passed three 30-second UART boots (23.66–23.67 C and
+28.25–28.36 %RH, responsive shells). Logic 2 confirmed 0x77/ID0x60,
+22 acknowledged address frames and `ctrl_meas=0x57`. Application RAM remains
+394156 B; flash is 734232 B. See [normal boot evidence](../GeneratedFiles/bme-power/normal-usb-boots/bme-boot-results.json)
+and [mode verification](../GeneratedFiles/bme-power/normal-usb-boots/mode-verification.json).
+PPK output remains off; the matching 300-second normal-mode power capture is
+pending DK USB disconnection. These checks do not resolve the repeated
+initialization seen in the USB-disconnected forced-mode run.
