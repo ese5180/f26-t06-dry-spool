@@ -4,6 +4,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
 
 #include "dryspool_sensors.h"
 
@@ -78,3 +79,23 @@ int dryspool_sensors_read(struct dryspool_reading *reading)
 	reading->dehumidifier_on = reading->humidity_pct > 43.0;
 	return 0;
 }
+
+static int cmd_bme_read(const struct shell *shell, size_t argc, char **argv)
+{
+	struct dryspool_reading reading;
+	int ret;
+
+	(void)shell;
+	(void)argc;
+	(void)argv;
+	ret = dryspool_sensors_read(&reading);
+	if (ret) {
+		LOG_ERR("BME280 sample failed: %d", ret);
+		return ret;
+	}
+	LOG_INF("BME280 sample: %.2f C, %.2f %%RH", reading.temperature_c,
+		reading.humidity_pct);
+	return 0;
+}
+
+SHELL_CMD_REGISTER(bme_read, NULL, "Read BME280 temperature and humidity", cmd_bme_read);

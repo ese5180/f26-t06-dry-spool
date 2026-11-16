@@ -295,12 +295,17 @@ py -m pip install pyserial  # only needed once
 py firmware/demo_bme_serial.py --port COM7
 ```
 
-Press the DK RESET button **after** the script says it opened the port. It
-prints the real UART lines and reports PASS after `BME probe: address 0x77,
-chip ID 0x60` and a `BME280 startup: ... C, ... %RH` reading. If the DK UART
-has another COM number, substitute that number for COM7. The script only
-listens; it does not flash, reset, or measure power. Wi-Fi connection errors
-may appear later and do not invalidate the local BME reading.
+Press the DK RESET button **after** the script says it opened the port. The
+script checks `BME probe: address 0x77, chip ID 0x60`, shows the startup
+reading, then sends the `bme_read` UART shell command every two seconds for
+four more real temperature/humidity readings. It reports PASS after all four.
+The `bme_read` command can also be typed manually in a serial monitor. If the
+DK UART has another COM number, substitute that number for COM7. The script
+does not flash, reset, or measure power. Wi-Fi is not needed for these local
+readings. If the DK still has an older image without `bme_read`, build and flash
+this branch using the commands above. The serial demo firmware includes an
+extra shell command, so earlier PPK captures apply to their recorded images,
+not this later demo build.
 
 For the longer automated HIL verification:
 
