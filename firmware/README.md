@@ -177,9 +177,11 @@ Verified on 2026-11-16 with the complete NCS 3.4.0
 | SCL | P1.03 / D15 (`arduino_i2c`) | CH1 |
 | GND | Common ground | GND |
 
-The operator-supplied power arrangement is regulated 3.3 V for the sensor
-and a bidirectional I2C shifter referenced to 1.8 V on the DK side. Signal
-voltages were not measured in this check. The detected sensor is BME280:
+The operator corrected the wiring: BME VCC/GND come from the DK, with no
+separate supply and no level shifter. Logic 2 measured both direct I2C lines
+idling at approximately 1.77 V. The exact DK VCC header pin was not identified;
+the operator confirms the sensor is downstream of the measured DK supply.
+The detected sensor is BME280:
 address **0x77**, chip-ID register **0xD0 = 0x60**. The initial expectation
 of 0x76 was corrected after the hardware probe and operator confirmation.
 
@@ -218,13 +220,40 @@ See [the capture](../GeneratedFiles/closed-loop/bme-boot.sal),
 on both unmodified `b4c61b0` and this image. This check does not verify live
 cloud reporting or FOTA transport. Their application paths remain unchanged.
 
-**PPK2:** baseline average, optimized average, and percentage change are not
-measured. Power measurements and pushing are paused by the operator; no
-PPK2 settings or sensor power optimization were applied.
+**PPK2 baseline (2026-11-16):** Source Meter at the existing 3.6 V setting,
+VOUT to P21 +, GND to P21 -, P22/P23 jumpers installed. DK USB was absent
+in live Windows enumeration. This measures the whole DK input, including
+the DK-powered BME, regulators and other board loads. A 29.99296 s power-on
+window averaged **48.467715 mA**, totaling **5.233285 J**. One completed BME
+read was captured: **23.43 C / 30.542969 %RH**, ID 0x60 at 0x77, 22/22 address
+frames acknowledged. Thus window energy per delivered sample was 5.233285 J;
+this is not isolated sensor conversion energy. All 2,999,296 PPK packets have
+continuous counters. Output was switched off afterward.
+
+[Raw PPK packets](../GeneratedFiles/bme-power/baseline/ppk-raw.bin),
+[calibration metadata](../GeneratedFiles/bme-power/baseline/metadata.txt),
+[power results](../GeneratedFiles/bme-power/baseline/power.json), and
+[I2C capture](../GeneratedFiles/bme-power/baseline/i2c.sal) are retained.
+PPK metadata reports `Calibrated: 0`; factory coefficients were used unchanged,
+and no independent meter calibration or physical supply accuracy check was made.
+
+The single proposed optimization is `CONFIG_BME280_MODE_FORCED=y`: request a
+conversion at `sensor_sample_fetch()` and sleep afterward. Supply, application
+interval, oversampling and logging stay unchanged. Optimized flash, UART/boot
+verification, after measurement and percentage change are **pending**.
+The current network wait allows only the startup delivered sample in the
+measured window; normal mode continues autonomous conversions between reads.
+An idle bus alone cannot prove continued application responsiveness.
+
+To replay raw current conversion offline (Windows Python, `ppk2-api==0.9.2`):
+
+```powershell
+python GeneratedFiles/bme-power/replay_power.py GeneratedFiles/bme-power/baseline
+```
 
 Short demo procedure:
 
-1. Keep the supplied sensor/level-shifter wiring and connect the DK USB for UART/debug.
+1. Keep the direct sensor wiring and connect the DK USB for UART/debug.
 2. Build and flash with the commands above.
 3. With Logic 2 automation enabled, run the Windows Python script
    `GeneratedFiles/closed-loop/verify_bme_boots.py` from the repository root
@@ -232,3 +261,13 @@ Short demo procedure:
    1050794921, commands three startups, and checks 30-second windows.
 4. Review the three UART logs, JSON results and Logic 2 capture; track Wi-Fi
    separately. The script does not control PPK2.
+
+For paired PPK measurements, first verify/flash with DK USB attached and PPK
+output off. Disconnect DK USB before running `capture_power.py baseline`
+(or `after`) with Windows Python (`ppk2-api==0.9.2`, `logic2-automation`,
+`pyserial`). Use a fresh output folder. The script requires the existing
+3.6 V Source Meter configuration, guards against COM6/COM7 being present,
+records a 30-second power-on window plus 32-second I2C capture, and leaves
+output off. Run `decode_bme.py` on that folder to verify ID/readings/ACKs
+and count delivered samples. A single pair cannot establish repeatability
+or isolate the BME contribution from whole-board startup variability.

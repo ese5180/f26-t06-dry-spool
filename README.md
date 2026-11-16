@@ -112,7 +112,9 @@ Temperature and humidity now use a BME280 at I2C address `0x77` through
 Zephyr's sensor driver. Filament and dehumidifier state remain simulated.
 Sensor identity, Logic 2 ACK evidence, wiring, and three successful boot
 checks are documented in the [firmware README](firmware/README.md#bme280-communication-and-boot-check).
-PPK measurements are paused; the existing Wi-Fi RDSR2 error remains a separate issue.
+A USB-disconnected P21 baseline measured 48.468 mA over 29.993 seconds;
+the optimized measurement remains pending. Raw data and scope limitations
+are in the firmware README. The existing Wi-Fi RDSR2 error remains separate.
 
 ### Boot and update process
 
