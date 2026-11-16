@@ -17,3 +17,9 @@ Paired acquisition plan, subject to confirmed scope:
 - After a valid baseline, change only CONFIG_BME280_MODE_FORCED=y. Zephyr then starts conversion on sample_fetch and the BME returns to sleep afterward. Keep all other conditions fixed; verify real readings, I2C communication and stable boot, then repeat the acquisition and compute the measured percentage difference. Do not claim a reduction if the data shows none.
 
 No current/energy values or improvement are available yet. Raw metadata is not a power capture. Waiting for physical power-path confirmation before proceeding.
+
+Operator correction (supersedes earlier P23/level-shifter assumptions):
+PPK2 is connected to P21, and there is no I2C level shifter. Nordic's nRF7002 DK power-supply guide identifies P21 as a 2.9–4.5 V external/Li-Poly input; configured 3.6 V is within that input range. Therefore this connection measures the DK input path, not only the P23 radio domain. VOUT/+ and GND/− polarity and the exact BME VCC/pull-up power pin still require physical confirmation. BME inclusion remains unconfirmed. No output-enable or target-reset command was sent.
+Reference: https://docs.nordicsemi.com/r/bundle/ug_nrf7002_dk/page/ug/nrf7002_dk/hw_power_supply.html
+
+Passive Logic 2 check: 0.1 s, analog CH0/CH1 at 625 kS/s, exported at 1 kS/s; no target reset. Idle SDA/SCL are approximately 1.77 V. Exact min/mean/max and point count are saved in direct-i2c-idle-voltage.json, with the capture and CSV. This does not determine sensor VCC or whether sensor supply current passes through PPK2.

@@ -13,7 +13,7 @@
   "output_enabled_state": "not reported in metadata",
   "dk_usb_present_at_preflight": true,
   "physical_wiring_currently_confirmed": false,
-  "bme_in_measurement_scope": "unknown; regulator input/ref rail power paths need operator confirmation",
+  "bme_in_measurement_scope": "unconfirmed; P21 supplies DK input, BME VCC connection not specified",
   "baseline_bme_mode": "normal",
   "configured_sample_interval_seconds": 60,
   "actual_delivered_sample_count": "to be counted from captured I2C data-read transactions; not inferred from interval",
@@ -27,5 +27,38 @@
   "energy_per_delivered_reading_after_j": null,
   "measured_improvement_percent": null,
   "planned_only_change": "CONFIG_BME280_MODE_FORCED=y after baseline capture",
-  "hardware_output_blocker": "Confirm P23 wiring and BME/regulator/level-shifter power path, then disconnect DK USB for capture"
+  "hardware_output_blocker": "Confirm VOUT to P21 plus / GND to minus and identify BME VCC/pull-up power pin before output enable and USB disconnection",
+  "operator_corrected_supply_connector": "P21",
+  "operator_reports_level_shifter": false,
+  "supply_connector_supported_voltage_range_v": [
+    2.9,
+    4.5
+  ],
+  "p21_polarity_currently_confirmed": false,
+  "bme_supply_connection_currently_confirmed": false,
+  "voltage_capture": {
+    "capture_seconds": 0.1,
+    "analog_sample_rate_hz": 625000,
+    "digital_sample_rate_hz": 20000000,
+    "csv_downsample_ratio": 625,
+    "connection": "CH0 SDA, CH1 SCL; operator reports direct I2C, no level shifter",
+    "dk_usb_connected": true,
+    "ppk_output_enable_sent": false,
+    "target_reset_sent": false,
+    "idle_bus_voltages": {
+      "Channel 0": {
+        "min_v": 1.764,
+        "mean_v": 1.7665269461077844,
+        "max_v": 1.77,
+        "points": 167
+      },
+      "Channel 1": {
+        "min_v": 1.764,
+        "mean_v": 1.7663652694610779,
+        "max_v": 1.769,
+        "points": 167
+      }
+    },
+    "limitations": "Measures only bus-pin voltage under the present powered state, not BME VCC, DK supply-rail voltage or measurement-current inclusion."
+  }
 }
