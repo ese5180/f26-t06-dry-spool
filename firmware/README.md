@@ -286,8 +286,26 @@ python GeneratedFiles/bme-power/compare_power.py
 
 Short demo procedure:
 
+For a TA demonstration of the already-flashed image, keep BME SDA on P1.02,
+SCL on P1.03, and VCC/GND on the DK. Turn PPK2 output off and connect the DK
+debugger USB. In a VS Code terminal at the repository root, run:
+
+```powershell
+py -m pip install pyserial  # only needed once
+py firmware/demo_bme_serial.py --port COM7
+```
+
+Press the DK RESET button **after** the script says it opened the port. It
+prints the real UART lines and reports PASS after `BME probe: address 0x77,
+chip ID 0x60` and a `BME280 startup: ... C, ... %RH` reading. If the DK UART
+has another COM number, substitute that number for COM7. The script only
+listens; it does not flash, reset, or measure power. Wi-Fi connection errors
+may appear later and do not invalidate the local BME reading.
+
+For the longer automated HIL verification:
+
 1. Keep the direct sensor wiring and connect the DK USB for UART/debug.
-2. Build and flash with the commands above.
+2. Build and flash with the commands above if needed.
 3. With Logic 2 automation enabled, run the Windows Python script
    `GeneratedFiles/closed-loop/verify_bme_boots.py` from the repository root
    (`pyserial` and `logic2-automation` required). It uses COM7 and probe

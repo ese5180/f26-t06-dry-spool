@@ -6,7 +6,7 @@
 
 /* NCS 3.4 cpuapp/ns target: dual-slot MCUboot layout with external slot1. */
 
-/* D14/P1.02 SDA and D15/P1.03 SCL, via the external level shifter. */
+/* Direct BME connection: D14/P1.02 SDA and D15/P1.03 SCL. */
 &arduino_i2c {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
