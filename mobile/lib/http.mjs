@@ -15,7 +15,7 @@ export function route(fn) {
       return await fn(...args);
     } catch (error) {
       if (error instanceof ApiError) return json({ error: error.message }, error.status);
-      return json({ error: '服务器暂时不可用' }, 500);
+      return json({ error: 'The server is temporarily unavailable.' }, 500);
     }
   };
 }
@@ -27,13 +27,13 @@ export async function input(req) {
   const scheme = process.env.VERCEL ? 'https:' : new URL(req.url).protocol;
   const host = req.headers.get('host') || new URL(req.url).host;
   if (origin !== scheme + '//' + host) {
-    throw new ApiError(403, '请求来源无效');
+    throw new ApiError(403, 'Invalid request origin.');
   }
   if (req.headers.get('content-type')?.split(';')[0].trim() !== 'application/json') {
-    throw new ApiError(415, '请求格式无效');
+    throw new ApiError(415, 'Expected a JSON request.');
   }
   const reader = req.body?.getReader();
-  if (!reader) throw new ApiError(400, '缺少请求内容');
+  if (!reader) throw new ApiError(400, 'The request body is missing.');
   const parts = [];
   let bytes = 0;
   for (;;) {
@@ -42,7 +42,7 @@ export async function input(req) {
     bytes += value.length;
     if (bytes > 1024) {
       await reader.cancel();
-      throw new ApiError(413, '请求过长');
+      throw new ApiError(413, 'The request body is too large.');
     }
     parts.push(value);
   }
@@ -51,6 +51,6 @@ export async function input(req) {
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw Error();
     return parsed;
   } catch {
-    throw new ApiError(400, '请求内容无效');
+    throw new ApiError(400, 'Expected a JSON object.');
   }
 }

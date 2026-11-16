@@ -3,10 +3,10 @@
 import { slots } from "../lib/slots.mjs";
 import { useEffect, useState } from "react";
 
-const MODES = { on: "开启", off: "关闭", auto: "自动" };
+const MODES = { on: "On", off: "Off", auto: "Auto" };
 const OTA_PHASES = {
-  checking: "检查更新", transferring: "传输固件", restarting: "正在重启",
-  idle: "空闲", failed: "升级失败",
+  checking: "Checking for updates", transferring: "Downloading firmware", restarting: "Restarting",
+  idle: "Idle", failed: "Update failed",
 };
 const projectUrl = "https://app.memfault.com/organizations/zicong-zhang/projects/default-project";
 const releasesUrl = process.env.NEXT_PUBLIC_NRF_CLOUD_RELEASES_URL || projectUrl + "/releases";
@@ -24,7 +24,7 @@ async function api(path, body, signal) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const error = new Error(typeof payload.error === "string" ? payload.error : "暂时无法连接，请重试");
+    const error = new Error(typeof payload.error === "string" ? payload.error : "Could not connect. Try again.");
     error.status = response.status;
     throw error;
   }
@@ -34,7 +34,7 @@ async function api(path, body, signal) {
 function Metric({ name, value, unit, large = false }) {
   return <div className={large ? "metric major" : "metric"}>
     <dt>{name}</dt>
-    <dd>{Number.isFinite(value) ? value.toLocaleString("zh-CN", {
+    <dd>{Number.isFinite(value) ? value.toLocaleString("en-US", {
       maximumFractionDigits: large ? 0 : 1,
     }) : "—"} <small>{unit}</small></dd>
   </div>;
@@ -51,21 +51,21 @@ function Box({ slot, data, networkError, now, reload }) {
   const ack = command && data?.request === command.id && data?.mode === command.mode && data?.control;
   const waiting = command && !ack && now - command.sent < 30_000;
   const blocked = !connected || !data?.control || sending || waiting || data?.pending;
-  const state = networkError ? "连接中断" : data?.error ? "读取失败" : !timestamp ? "等待上报" :
-    data.online === false ? "已离线" : connected ? "在线" : "读数已过期";
-  const output = data?.fan === true ? "开" : data?.fan === false ? "关" : "未知";
+  const state = networkError ? "Disconnected" : data?.error ? "Read failed" : !timestamp ? "Awaiting data" :
+    data.online === false ? "Offline" : connected ? "Online" : "Stale reading";
+  const output = data?.fan === true ? "On" : data?.fan === false ? "Off" : "Unknown";
   const firmware = typeof data?.firmware === "string" ? data.firmware.trim() : "";
   const ota = Object.hasOwn(OTA_PHASES, data?.ota) ? OTA_PHASES[data.ota] : "";
-  const feedback = error || (sending ? "正在发送…" : ack ? "箱子已确认 · " + MODES[command.mode] :
-    waiting || data?.pending ? "指令已发送，等待箱子确认" : command ? "尚未收到设备确认" :
-    data?.error || (connected && !data.control ? "当前设备仅上报读数" : ""));
+  const feedback = error || (sending ? "Sending…" : ack ? "Box confirmed · " + MODES[command.mode] :
+    waiting || data?.pending ? "Command sent. Waiting for the box to confirm." : command ? "No confirmation from the box yet." :
+    data?.error || (connected && !data.control ? "This box is reporting readings only." : ""));
   async function control(mode) {
     setSending(true);
     setCommand(null);
     setError("");
     try {
       const result = await api("/api/" + slot + "/fan", { mode });
-      if (!result.request) throw new Error("云端未返回指令编号");
+      if (!result.request) throw new Error("The cloud did not return a command ID.");
       setCommand({ id: result.request, mode, sent: Date.now() });
     } catch (e) {
       setError(e.message);
@@ -77,30 +77,30 @@ function Box({ slot, data, networkError, now, reload }) {
 
   return <article className="box">
     <div className="boxheading">
-      <h2><span className="letter">{slot}</span>耗材箱 {slot}</h2>
+      <h2><span className="letter">{slot}</span>Box {slot}</h2>
       <span className={"state" + (connected ? " active" : "")}><i />{state}</span>
     </div>
     <dl className="readings">
-      <Metric large name="耗材余量" value={data?.grams} unit="g" />
-      <Metric name="箱内温度" value={data?.temperature} unit="°C" />
-      <Metric name="相对湿度" value={data?.humidity} unit="%" />
+      <Metric large name="Filament remaining" value={data?.grams} unit="g" />
+      <Metric name="Temperature" value={data?.temperature} unit="°C" />
+      <Metric name="Relative humidity" value={data?.humidity} unit="%" />
     </dl>
     <div className="controls">
-      <div className="controlheading"><h3>风扇模式</h3><span>上报输出 · {output}</span></div>
-      <div className="segments" role="group" aria-label={"箱 " + slot + " 风扇"}>
+      <div className="controlheading"><h3>Fan mode</h3><span>Fan output · {output}</span></div>
+      <div className="segments" role="group" aria-label={"Box " + slot + " fan controls"}>
         {Object.entries(MODES).map(([mode, name]) =>
           <button key={mode} type="button" disabled={!!blocked}
             aria-pressed={data?.mode === mode} onClick={() => control(mode)}>{name}</button>)}
       </div>
       {feedback && <p role="status" className="feedback">{feedback}</p>}
     </div>
-    {(firmware || ota) && <dl className="firmware" aria-label={"箱 " + slot + " 固件信息"}>
-      {firmware && <div><dt>上报固件版本</dt><dd>{firmware}</dd></div>}
-      {ota && <div><dt>上报升级状态</dt><dd>{ota}</dd></div>}
+    {(firmware || ota) && <dl className="firmware" aria-label={"Box " + slot + " firmware"}>
+      {firmware && <div><dt>Firmware version</dt><dd>{firmware}</dd></div>}
+      {ota && <div><dt>Update status</dt><dd>{ota}</dd></div>}
     </dl>}
-    <footer>{timestamp > 0 ? <>最近上报 <time dateTime={new Date(timestamp).toISOString()}>
-      {new Date(timestamp).toLocaleString("zh-CN", { month:"2-digit", day:"2-digit", hour:"2-digit",
-        minute:"2-digit", second:"2-digit", hour12:false })}</time></> : "暂无上报时间"}</footer>
+    <footer>{timestamp > 0 ? <>Last report <time dateTime={new Date(timestamp).toISOString()}>
+      {new Date(timestamp).toLocaleString("en-US", { month:"2-digit", day:"2-digit", hour:"2-digit",
+        minute:"2-digit", second:"2-digit", hour12:false })}</time></> : "No reports yet"}</footer>
   </article>;
 }
 
@@ -125,8 +125,8 @@ function Install() {
     aria-expanded={showHelp} onClick={async () => {
       if (!prompt) { setShowHelp(!showHelp); return; }
       try { await prompt.prompt(); await prompt.userChoice; } finally { setPrompt(null); }
-    }}>添加到主屏幕</button>
-    {showHelp && <p role="status" className="installhelp">iPhone 请点 Safari 的“分享”→“添加到主屏幕”。Android 可在浏览器菜单中选择“安装应用”或“添加到主屏幕”。</p>}
+    }}>Add to Home Screen</button>
+    {showHelp && <p role="status" className="installhelp">On iPhone, tap Share in Safari, then Add to Home Screen. On Android, open the browser menu and choose Install app or Add to Home screen.</p>}
   </div>;
 }
 
@@ -149,11 +149,11 @@ export default function Dashboard() {
       try {
         const value = await api("/api/devices", undefined, request.signal);
         if (!active || generation !== run) return;
-        if (!Array.isArray(value)) throw new Error("设备数据格式有误");
+        if (!Array.isArray(value)) throw new Error("Unexpected device data format.");
         setDevices(value); setError("");
       } catch (e) {
         if (!active || generation !== run) return;
-        setError(e.status ? e.message : "与云端连接中断");
+        setError(e.status ? e.message : "Lost connection to the cloud.");
       } finally {
         clearTimeout(timeout);
         if (active && generation === run && !document.hidden) {
@@ -187,15 +187,15 @@ export default function Dashboard() {
       <div className="brand"><img alt="" width="36" height="36" src="/icon-192.png" />DrySpool</div>
       <Install />
     </header>
-    <div className="titlebar"><h1>设备看板</h1>
+    <div className="titlebar"><h1>Device dashboard</h1>
       <nav className="cloudlinks" aria-label="nRF Cloud">
-        <a href={metricsUrl} target="_blank" rel="noopener noreferrer">历史指标 ↗</a>
-        <a href={releasesUrl} target="_blank" rel="noopener noreferrer">固件发布 ↗</a>
+        <a href={metricsUrl} target="_blank" rel="noopener noreferrer">Metrics history ↗</a>
+        <a href={releasesUrl} target="_blank" rel="noopener noreferrer">Firmware releases ↗</a>
       </nav>
     </div>
-    {error && <div className="notice" role="alert">{error}<button onClick={reload}>重试</button></div>}
-    {devices.length === 0 && !error ? <p role="status">正在连接云端…</p> :
-      <section className="grid" aria-label="耗材箱">
+    {error && <div className="notice" role="alert">{error}<button onClick={reload}>Retry</button></div>}
+    {devices.length === 0 && !error ? <p role="status">Connecting to the cloud…</p> :
+      <section className="grid" aria-label="Filament boxes">
         {slots.map(slot => <Box key={slot} slot={slot} data={devices.find(d => d.slot === slot)}
           networkError={!!error} now={now} reload={reload} />)}
       </section>}

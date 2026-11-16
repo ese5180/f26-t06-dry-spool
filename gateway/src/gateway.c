@@ -51,7 +51,7 @@ int gateway_snapshot(int slot, char *out, size_t size)
 		valid ? ((b.flags & OUTPUT_ON) ? "true" : "false") : "null",
 		valid && b.mode < ARRAY_SIZE(modes) ? modes[b.mode] : "",
 		sys_get_le32(b.command_id), valid ? "true" : "false", s->pending ? "true" : "false",
-		modes[s->requested], !fresh ? "\"箱子离线\"" : "null");
+		modes[s->requested], !fresh ? "\"Box offline\"" : "null");
 	k_mutex_unlock(&lock);
 	return n;
 }

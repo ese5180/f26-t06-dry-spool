@@ -31,12 +31,12 @@ export function device(slot, shadow, now = Date.now()) {
 }
 
 export function deviceId(slot, env = process.env) {
-  if (!slots.includes(slot)) throw new ApiError(404, '未知箱子');
+  if (!slots.includes(slot)) throw new ApiError(404, 'Unknown box.');
   const idFor = s => env['NRF_DEVICE_' + s]?.trim();
   const id = idFor(slot);
-  if (!id) throw new ApiError(503, '请配置箱 ' + slot + ' 的设备 ID');
+  if (!id) throw new ApiError(503, `Set the device ID for Box ${slot}.`);
   if (slots.some(s => s !== slot && idFor(s)?.toLowerCase() === id.toLowerCase())) {
-    throw new ApiError(503, '设备 ID 重复，请核对箱 ' + slot + ' 的配置');
+    throw new ApiError(503, `Duplicate device ID. Check the configuration for Box ${slot}.`);
   }
   return id;
 }
@@ -45,7 +45,7 @@ export async function state(slot, patch, send = fetch) {
   const id = deviceId(slot);
   const { NRF_ORG, NRF_PROJECT, DRYSPOOL_OAT } = process.env;
   if (![NRF_ORG, NRF_PROJECT, DRYSPOOL_OAT].every(Boolean)) {
-    throw new ApiError(503, '请配置 nRF Cloud 项目和服务器令牌');
+    throw new ApiError(503, 'Set the nRF Cloud project and server token.');
   }
   const path = [NRF_ORG, NRF_PROJECT, id].map(encodeURIComponent);
   const url = 'https://api.nrfcloud.com/v1/organizations/' + path[0] + '/projects/' + path[1] +
@@ -60,9 +60,9 @@ export async function state(slot, patch, send = fetch) {
     });
     if (res.ok) return patch ? undefined : await res.json();
   } catch {
-    throw new ApiError(502, 'nRF Cloud 连接中断，请稍后刷新');
+    throw new ApiError(502, 'Lost connection to nRF Cloud. Refresh to try again.');
   }
-  throw new ApiError(502, 'nRF Cloud 请求失败（HTTP ' + res.status + '）');
+  throw new ApiError(502, `nRF Cloud request failed (HTTP ${res.status}).`);
 }
 
 export function devices(call = state) {
@@ -70,19 +70,19 @@ export function devices(call = state) {
     try {
       return device(slot, await call(slot));
     } catch (error) {
-      return { ...device(slot, {}), error: error instanceof ApiError ? error.message : '云端读取失败' };
+      return { ...device(slot, {}), error: error instanceof ApiError ? error.message : 'Could not read the cloud state.' };
     }
   }));
 }
 
 export async function command(slot, mode, call = state, clock = Date.now) {
-  if (!slots.includes(slot)) throw new ApiError(404, '未知箱子');
-  if (!modes.includes(mode)) throw new ApiError(400, '风扇模式无效');
+  if (!slots.includes(slot)) throw new ApiError(404, 'Unknown box.');
+  if (!modes.includes(mode)) throw new ApiError(400, 'Invalid fan mode.');
   const shadow = await call(slot);
   const now = clock();
   const current = device(slot, shadow, now);
-  if (!current.control) throw new ApiError(409, '读数已过期或风扇未就绪，请等待设备上报');
-  if (current.pending) throw new ApiError(409, '正在等待上一条指令的回执');
+  if (!current.control) throw new ApiError(409, 'Wait for a fresh reading and a ready fan before sending a command.');
+  if (current.pending) throw new ApiError(409, 'Waiting for the box to confirm the previous command.');
   const request = randomInt(1, 0x7fffffff);
   const expires = Math.floor(now / 1000) + 45;
   await call(slot, { desired: { config: { fan: { mode, request, expires } } } });

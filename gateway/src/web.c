@@ -105,7 +105,7 @@ static int dispatch(struct exchange *x, struct http_response_ctx *res)
 	}
 	if (x->action == PAIR) {
 		if (!input.code || strcmp(input.code, code)) {
-			strcpy(x->output, "{\"error\":\"连接码不正确\"}");
+			strcpy(x->output, "{\"error\":\"Incorrect pairing code\"}");
 			return HTTP_403_FORBIDDEN;
 		}
 		res->headers = &set_cookie;
@@ -117,7 +117,7 @@ static int dispatch(struct exchange *x, struct http_response_ctx *res)
 	}
 	int rc = gateway_command(x->action == FAN_B, input.mode, &id);
 	if (rc) {
-		strcpy(x->output, "{\"error\":\"检查箱子连接和上一条指令状态\"}");
+		strcpy(x->output, "{\"error\":\"Check the box connection and the previous command.\"}");
 		return rc == -EINVAL ? HTTP_400_BAD_REQUEST : HTTP_409_CONFLICT;
 	}
 	snprintf(x->output, sizeof(x->output), "{\"request\":%u}", id);

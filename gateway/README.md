@@ -1,10 +1,10 @@
-# DrySpool 网关、箱子与云端固件更新
+# DrySpool BLE gateway and firmware updates
 
-A、B 在箱内采集温湿度、称量耗材并驱动风扇。两台箱子通过 BLE 连接 G。G 只用一个校园 Wi-Fi MAC，通过 CoAP/DTLS 同步 nRF Cloud 的 Device Shadow，通过 HTTPS 转发 Memfault 数据和固件。该拓扑配套的[网关版手机看板](https://github.com/ese5180/f26-t06-dry-spool/tree/5cff799265570e2f544c76aa58ac233a34c4e806/mobile)保留在之前的提交。当前分支的三台独立 Wi-Fi 箱子使用[直连固件](../mvp_firmware/README.md)和[三箱看板](../mobile/README.md)。
+In the gateway setup, boxes A and B measure temperature, humidity and filament mass and drive their fans. They connect to gateway G over BLE. G uses one campus Wi-Fi MAC address, synchronizes its nRF Cloud device shadow over CoAP/DTLS and relays Memfault data and firmware over HTTPS. Use the [gateway-compatible mobile dashboard](https://github.com/ese5180/f26-t06-dry-spool/tree/5cff799265570e2f544c76aa58ac233a34c4e806/mobile) for this setup. The current three-box Wi-Fi setup uses the [direct-connect firmware](../mvp_firmware/README.md) and [three-box dashboard](../mobile/README.md).
 
-## 首次刷机
+## First flash
 
-在 nRF Connect SDK 3.4.0 终端，从仓库根目录操作。先按[团队设置指南](../docs/TEAM_SETUP_AND_DEMO.md) 准备签名密钥和含 Memfault Project Key 的 `firmware/local.conf`，用 `nrfutil device list` 对照三块板的调试器序列号。脚本按角色生成独立的构建目录。
+From the repository root, use an nRF Connect SDK 3.4.0 terminal. Follow the [team setup guide](../docs/TEAM_SETUP_AND_DEMO.md) to obtain the signing key and prepare `firmware/local.conf` with the Memfault Project Key. Use `nrfutil device list` to identify each board's probe serial number. The build script creates a separate directory for each role.
 
 ```sh
 ./gateway/build.sh A
@@ -15,32 +15,34 @@ west flash --no-rebuild -d build-gateway-pwa-B --dev-id SERIAL_B
 ./gateway/flash-g.sh "$PWD/build-gateway-pwa-G" SERIAL_G
 ```
 
-G 首次迁移到此配置时用 USB。脚本将与当前 NCS 配套的 Wi-Fi 补丁写到外部 Flash 的专用区域，并烧录 G 的启动程序、应用处理器和网络处理器。后续针对同一布局和 Wi-Fi 补丁的应用更新可以走云端 OTA。
+Use USB when first migrating G to this configuration. The script writes the SDK's Wi-Fi patch to its reserved external flash area and programs the bootloader, application and network cores. Later application updates using the same layout and Wi-Fi patch can use cloud OTA.
 
-## 配网、配对与看板
+## Network setup, pairing and dashboard
 
-1. 打开 G 的应用 UART（115200），登记启动日志中的 `Register gateway Wi-Fi MAC`。按[设备注册流程第 4 节](../docs/TEAM_SETUP_AND_DEMO.md#4-add-a-new-dk-to-nrf-cloud) 为 G 安装它自己的 CoAP 设备证书并注册其设备 ID。PWA 服务端的 `NRF_GATEWAY_ID` 填这个 ID。现场网络要允许 G 访问 NTP、CoAP/DTLS 和 HTTPS。
-2. WPA2-PSK 示例：在 G 串口运行 `wifi cred add -s YOUR_SSID -k 1 -p YOUR_PASSWORD`，然后运行 `wifi cred auto_connect`。A、B 使用 BLE，各自的 Memfault 身份来自本板硬件 ID。
-3. 首次配对，同时按住 G 和 A 的 **Button 1**，直到收到 A 的读数。对 B 重复。按[称重步骤](../mvp_firmware/README.md) 给两台箱子分别去皮、校准、设置空盘重量。有效校准完成前余量显示为 **—**。
-4. 手机打开部署后实际分配的 HTTPS 地址。A、B 的最新样本位于 G 的 `reported.dryspool.A/B`。用户选择风扇模式后，服务端把模式、请求编号和期限放入 `desired.config.A/B`。G 等到对应箱子回报已应用指令后，才把相同请求写入 `reported.config`。G 时间未同步或命令过期时不会重新执行旧操作。
-5. 现场验收时，开关 A，观察 A 的实体风扇和手机上的执行确认，再检查 B 的模式；对 B 重复并恢复自动。G 串口另外显示局域网网页和连接码，可在允许客户端互访的网络上调试。云端 PWA 不需要手机与 G 同网。
+1. Open G's application UART at 115200 baud and register the MAC printed after `Register gateway Wi-Fi MAC`. Install G's CoAP device certificate and register its device ID using [step 4 of the onboarding guide](../docs/TEAM_SETUP_AND_DEMO.md#4-add-a-new-dk-to-nrf-cloud). Set `NRF_GATEWAY_ID` on the gateway-compatible PWA server to that ID. G needs network access to NTP, CoAP/DTLS and HTTPS.
+2. For WPA2-PSK, run `wifi cred add -s YOUR_SSID -k 1 -p YOUR_PASSWORD` in G's serial shell, then run `wifi cred auto_connect`. A and B use BLE and each reports its own hardware ID to Memfault.
+3. To pair A, hold **Button 1** on G and A simultaneously until G receives readings. Repeat for B. Follow the [scale calibration steps](../mvp_firmware/README.md) to tare, calibrate and set the empty spool mass on each box. Remaining filament displays a dash until calibration is complete.
+4. Open the deployed HTTPS address on the phone. G stores the latest readings in `reported.dryspool.A` and `reported.dryspool.B`. When a user changes fan mode, the server writes the mode, request ID and expiry to the target box's entry in `desired.config`. G copies the request to `reported.config` after the box confirms it. G ignores expired commands and waits for clock synchronization before applying commands.
+5. Turn A's fan on and off. Check the physical fan, the confirmation on the phone and B's mode. Repeat for B and restore automatic control. G's serial output also shows a local dashboard URL and pairing code for networks that allow client-to-client access. The cloud PWA works from any internet connection.
 
-## 在 nRF Cloud 发布 FOTA
+## Publish a firmware update in nRF Cloud
 
-首次把上述新固件刷到三块板并完成配网。G 为每个箱子转发 Memfault 心跳，并带着该箱子的硬件序列号、硬件类型、软件类型和当前版本定期查询 release。云端设备记录与 G 的控制 Shadow 各有用途。前者用于单设备固件和诊断，后者用于 A、B 的实时操作。
+Flash and provision all three boards first. G relays each box's Memfault heartbeat and periodically checks for releases using its serial number, hardware and software types, and running version. Each box has its own record for updates and diagnostics. G's shadow handles live controls for A and B.
 
-| 对象 | Software type | Hardware version | 首刷构建目录 |
+| Board | Software type | Hardware version | Initial build directory |
 | --- | --- | --- | --- |
 | A | `dryspool-box-a` | `dryspool-box-a` | `build-gateway-pwa-A` |
 | B | `dryspool-box-b` | `dryspool-box-b` | `build-gateway-pwa-B` |
 | G | `dryspool-gateway` | `nrf7002dk-rev1` | `build-gateway-pwa-G` |
 
-1. 记录现场基线的实际版本。在团队项目 **Fleet → Devices** 确认 A、B、G 的设备 ID、软件类型及版本。若只想给 A 升级，将目标 A 放到相应演示 cohort。
-2. 准备正式演示升级时，再将 `gateway/VERSION` 调到高于现场基线的版本，用相同签名密钥把对应角色重建到单独的输出目录。签名时给 A、B 各自写入受保护的角色标识。网关核对角色，MCUboot 核验签名。
-3. 在团队 **Software → Symbol Files** 上传该次构建的 `gateway/zephyr/zephyr.elf`。在 **Software → OTA Releases** 为对应的软件与硬件类型创建 release，上传同一次构建的 `gateway/zephyr/zephyr.signed.bin`，检查版本和目标 cohort，再激活。
-4. **更新箱子**时，G 代目标箱子查询、下载并通过 BLE 转发签名镜像，箱子重启并执行健康检查。回到手机页与云端设备记录核对实际运行版本，再检查读数、风扇和另外一台箱子。**更新 G** 时，G 自己通过 Wi-Fi 获取签名镜像；可在 G 的串口运行 `mflt get_latest_release` 立即检查。
-5. 若需要演示手机直连 BLE，使用 nRF Connect Device Manager 的 Image → Test & Confirm，选目标箱子的 `dfu_application.zip`。手机首次配对按住对应箱子的 Button 1。[Nordic BLE FOTA 教程](https://academy.nordicsemi.com/courses/nrf-connect-sdk-intermediate/lessons/lesson-9-bootloaders-and-dfu-fota/topic/exercise-5-fota-over-bluetooth-low-energy/) · [网关代查下游发布](https://docs.nrfcloud.com/docs/best-practices/ota-components)
+1. Record the running versions. In **Fleet → Devices**, verify the IDs, software types and versions of A, B and G. For a single-box demo, place only the target box in the demo cohort.
+2. When ready to demonstrate an upgrade, increase `gateway/VERSION` above the running baseline and rebuild the target role into a separate directory with the same signing key. The signed A and B images carry a protected role identifier. G checks the role and MCUboot verifies the signature.
+3. Under **Software → Symbol Files**, upload `gateway/zephyr/zephyr.elf` from that build. Under **Software → OTA Releases**, create a release for its software and hardware types and upload `gateway/zephyr/zephyr.signed.bin` from the same build. Verify the version and target cohort, then activate the release.
+4. For A or B, G checks for the release, downloads the signed image and transfers it over BLE. The box reboots and runs its health checks. Compare the running version on the dashboard and in the cloud, then check the readings, the fan and the other box. G downloads its own updates over Wi-Fi. Run `mflt get_latest_release` in G's serial shell for an immediate check.
+5. For a phone-to-box BLE demo, open **Image → Test & Confirm** in nRF Connect Device Manager and select the target box's `dfu_application.zip`. Hold **Button 1** on the box when first pairing the phone. [Nordic BLE FOTA tutorial](https://academy.nordicsemi.com/courses/nrf-connect-sdk-intermediate/lessons/lesson-9-bootloaders-and-dfu-fota/topic/exercise-5-fota-over-bluetooth-low-energy/) · [OTA for downstream devices](https://docs.nrfcloud.com/docs/best-practices/ota-components)
 
-## 课程演示
+## Course demonstration
 
-在 G 串口用 `mflt get_device_info` 核对身份，用 `mflt test heartbeat` 和 `mflt post_chunks` 检查 G 的指标。对箱子也可触发心跳并等 G 转发，随后在 A、B 各自的设备记录查看温湿度、余量和风扇输出。演示 G 的 core dump 时，先上传当前 ELF，用 `mflt coredump_size` 对照存储容量，再用 `mflt test assert` 触发受控重启；通过 `mflt get_core`、`mflt post_chunks` 与云端 Issue 交叉验证。现场保存实际的升级前后版本和物理风扇动作作为证据。
+On G's UART, run `mflt get_device_info` to verify its identity. Run `mflt test heartbeat` and `mflt post_chunks` to check its metrics. Trigger a heartbeat on a box and wait for G to forward it, then check temperature, humidity, remaining filament and fan output in the individual A and B records.
+
+To demonstrate a core dump on G, upload the running build's ELF and use `mflt coredump_size` to check storage capacity. Trigger a controlled reboot with `mflt test assert`, then use `mflt get_core`, `mflt post_chunks` and the corresponding cloud issue to verify the dump. Record the actual versions before and after the upgrade and observe the physical fan during the demonstration.

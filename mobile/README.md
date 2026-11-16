@@ -1,33 +1,34 @@
-# DrySpool 手机看板
+# DrySpool mobile dashboard
 
-手机和电脑共用一个 Next.js PWA。A、B、C 是三台独立的 Wi-Fi 耗材箱。每台各用自己的设备证书连接 nRF Cloud，各有一个 Device Shadow。看板后端按设备 ID 读取温湿度、余量、风扇和固件状态，并把指令发给选中的箱子。任何拿到看板网址的人都可以查看数据、操作在线设备的风扇。使用校园网时登记三块板各自的 Wi-Fi MAC。
+Open the [DrySpool dashboard](https://dryspool-dashboard.vercel.app) on a phone or computer. Boxes A, B and C connect to nRF Cloud over Wi-Fi with their own device certificates. The dashboard reads temperature, relative humidity, remaining filament, fan state and firmware status from each device shadow. Anyone with the dashboard URL can view the readings and control the fan on an online box. Register each board's Wi-Fi MAC address if the campus network requires it.
 
-## 运行与部署
+## Run and deploy
 
-在本目录使用 Node 24 和项目指定的 pnpm。安装依赖后复制 `.env.example` 为 `.env.local`，填入下表的服务端环境变量。云端部署时，直接在 Vercel 项目设置里配置这些值。
+Use Node 24 and the pnpm version specified in `package.json`. Copy `.env.example` to `.env.local` for local testing. For deployment, configure these variables in the Vercel project settings.
 
-| 变量 | 用途 |
+| Variable | Value |
 | --- | --- |
-| `NRF_ORG`、`NRF_PROJECT` | nRF Cloud 组织和项目 slug，可从团队项目地址读取 |
-| `NRF_DEVICE_A`、`NRF_DEVICE_B`、`NRF_DEVICE_C` | 分别填写三台箱子启动时打印的 nRF Cloud device ID。可以先填一台，其他卡片会提示缺少 ID |
-| `DRYSPOOL_OAT` | 项目范围的 nRF Cloud Organization Auth Token，Device Data → Manage（读写 shadow） |
-| `NEXT_PUBLIC_NRF_CLOUD_RELEASES_URL` | 可选，手机页上的团队 OTA Releases 链接。它是公开 URL |
-| `NEXT_PUBLIC_NRF_CLOUD_METRICS_URL` | 可选，团队 nRF Cloud 历史指标看板的公开 URL，访问页面需登录云端 |
+| `NRF_ORG`, `NRF_PROJECT` | Organization and project slugs from the team's nRF Cloud project URL |
+| `NRF_DEVICE_A`, `NRF_DEVICE_B`, `NRF_DEVICE_C` | The nRF Cloud device ID printed at startup by the corresponding box. You can start with one box. Each missing ID affects only its own card. |
+| `DRYSPOOL_OAT` | Server-side nRF Cloud Organization Auth Token for the project, with Device Data → Manage permission to read and update shadows |
+| `NEXT_PUBLIC_NRF_CLOUD_RELEASES_URL` | Optional link to the team's OTA releases page, visible to dashboard users |
+| `NEXT_PUBLIC_NRF_CLOUD_METRICS_URL` | Optional link to the team's metrics history. The cloud portal requires its own login. |
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm test
 pnpm build
+pnpm start --hostname 127.0.0.1
 ```
 
-本机测试时运行 `pnpm start --hostname 127.0.0.1`，打开 `http://127.0.0.1:3000` 即可进入看板。修改 `.env.local` 后重启服务。同一可信私人 Wi-Fi 下要用手机测试，可先停止本机服务，改用 `pnpm start --hostname 0.0.0.0`，在手机浏览器打开 `http://<Mac 的局域网 IP>:3000`。局域网 HTTP 适合测试网页操作；安装 PWA 和 Service Worker 使用受信任的 HTTPS 地址。
+Open `http://127.0.0.1:3000`. Restart the server after editing `.env.local`. To test on a phone over trusted private Wi-Fi, stop the server, run `pnpm start --hostname 0.0.0.0` and open `http://<Mac-LAN-IP>:3000` on the phone. Use the deployed HTTPS site for PWA installation and the service worker.
 
-日后部署到 Vercel 时选择 Next.js 预设，只上传 `mobile` 目录，将上表变量设置在项目服务端。首次打开 HTTPS 网址后，在 iPhone Safari 的分享菜单选择「添加到主屏幕」，在 Android 的浏览器菜单选择安装。手机可以用蜂窝网访问部署后的站点。
+On Vercel, select the Next.js preset and deploy the `mobile` directory. Open the HTTPS URL in Safari on iPhone and choose **Share → Add to Home Screen**. On Android, choose **Install app** or **Add to Home screen** from the browser menu. The deployed dashboard also works over cellular data.
 
-## 实物验收
+## Test with hardware
 
-1. 先用 USB 连接箱 A，按[固件指南](../mvp_firmware/README.md)刷板、配置 Wi-Fi 和设备证书。查看串口的 `Device Wi-Fi MAC` 和 `nRF Cloud device ID`，核对 A 卡片对应的设备。B、C 可随后逐台加入。
-2. 在 A 自己的 Device Shadow 查看 `reported.dryspool`，核对手机上的温度、湿度与串口。未称重校准时余量显示「—」。完成去皮、参考砝码和空盘设置后，放上已知重量核对克数。
-3. 选择 A 的「开启」「关闭」「自动」，每次等「箱子已确认」，观察实体风扇和 B、C 的模式。每次只修改目标设备的 `desired.config.fan`，设备执行后回报相同请求。板端上报输出对应 GPIO，转动情况需现场观察。
-4. 断开一台板的电源，等待约 45 秒，确认该卡片禁用控制，另外两台在线卡片继续操作。
-5. 每台在项目中以自己的 ID 上报。用「历史指标」查看已上传的历史数据，用「固件发布」打开团队 OTA Releases。演示单台 OTA 时，选择只包含目标板的 cohort，实际升级后核对三张卡片的版本。[签名和 OTA 步骤](../mvp_firmware/README.md#verify-a-signed-firmware-update)
+1. Connect Box A over USB. Follow the [firmware guide](../mvp_firmware/README.md) to flash it, configure Wi-Fi and install its device certificate. Check the startup log for `Device Wi-Fi MAC` and `nRF Cloud device ID`, then match the ID to Box A. Repeat for B and C when available.
+2. Compare the temperature and relative humidity in A's `reported.dryspool` shadow with its dashboard card and serial output. Remaining filament displays a dash until calibration is complete. Tare the scale, calibrate it with a known mass, enter the empty spool mass and verify the reading in grams.
+3. Select **On**, **Off** and **Auto** on Box A. After each command, wait for **Box confirmed**, watch the physical fan and check the modes on B and C. Only the selected device receives `desired.config.fan`. The displayed fan output reflects the GPIO signal. Check rotation on the box.
+4. Disconnect one box and wait about 45 seconds. Its fan controls should become unavailable while the two online boxes remain responsive.
+5. Open **Metrics history** to view uploaded data or **Firmware releases** to open the team's OTA releases. To demonstrate an update on a single box, deploy to a cohort containing only that device and compare the firmware versions on all three cards afterward. [Signing and OTA instructions](../mvp_firmware/README.md#verify-a-signed-firmware-update)

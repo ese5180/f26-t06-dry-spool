@@ -1,8 +1,8 @@
 import "./style.css";
 
 export const metadata = {
-  title: "DrySpool · 设备看板",
-  description: "查看三台耗材箱的温湿度、耗材余量，并调整风扇模式。",
+  title: "DrySpool · Device dashboard",
+  description: "Monitor temperature, humidity and remaining filament in three boxes and control each fan.",
   applicationName: "DrySpool",
   appleWebApp: { capable: true, title: "DrySpool", statusBarStyle: "default" },
   icons: { icon: "/icon-192.png", apple: "/icon-180.png" },
@@ -11,5 +11,5 @@ export const metadata = {
 export const viewport = { themeColor: "#f5f3ed", viewportFit: "cover" };
 
 export default function Layout({ children }) {
-  return <html lang="zh-CN"><body>{children}</body></html>;
+  return <html lang="en-US"><body>{children}</body></html>;
 }
