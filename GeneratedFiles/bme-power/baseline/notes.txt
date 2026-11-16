@@ -1,0 +1,24 @@
+Baseline firmware: application build ID 67839ffc52fc7553478e1610a98e002ad00cbc6b;
+source before CONFIG_BME280_MODE_FORCED change (commit 31434bb).
+Unchanged running firmware from earlier UART / three-boot verification.
+PPK2 Source Meter metadata mode 2, VDD 3600 mV; no voltage/mode changes.
+Operator confirms VOUT P21+, GND P21-, P22/P23 installed, BME powered
+from DK. Thus current includes BME, regulators and other DK input loads.
+DK USB COM6/COM7 absent in live enumeration before output enable.
+Logic CH0 SDA P1.02, CH1 SCL P1.03, common GND, direct connection.
+32 s Logic capture around 30 s PPK startup window; factory 100 ksample/s.
+Power-on sample reaches application sample_fetch (F7 eight-byte read).
+Bosch temperature/humidity compensation reconstructs plausible readings
+from the real calibration/data transactions; no UART USB during measurement.
+22/22 address frames at 0x77 ACK, ID 0x60, one completed delivered sample.
+No repeated sensor initialization visible within the I2C window; an idle bus
+cannot independently prove continued application responsiveness.
+Application waits for cloud before its periodic loop. Existing Wi-Fi fault
+remains untouched; this is a startup-window comparison, not a demonstration
+of periodic cloud samples. BME normal mode autonomously converts between
+application reads; those conversions are not counted as delivered samples.
+Energy/sample is whole DK startup energy divided by completed read bursts,
+not BME-only conversion energy. Counter continuity validates raw USB stream.
+PPK metadata reports Calibrated:0; coefficients retained verbatim. No external
+meter calibration or physical supply-voltage accuracy check was performed.
+Output switched off after acquisition. No current values invented.
