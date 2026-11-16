@@ -29,16 +29,32 @@ void dryspool_publish_sample(struct dryspool_sample *sample)
 
 static struct fan_request requested; /* Starts in automatic mode. */
 
+static struct fan_request queued;
+static int64_t deadline;
+
+void dryspool_queue_fan_request(struct fan_request request, int64_t deadline_ms)
+{
+	k_spinlock_key_t key = k_spin_lock(&sample_lock);
+	queued = request;
+	deadline = deadline_ms;
+	k_spin_unlock(&sample_lock, key);
+}
+
 void dryspool_set_fan_request(struct fan_request request)
 {
 	k_spinlock_key_t key = k_spin_lock(&sample_lock);
 	requested = request;
+	deadline = 0;
 	k_spin_unlock(&sample_lock, key);
 }
 
 struct fan_request dryspool_get_fan_request(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&sample_lock);
+	if (deadline && k_uptime_get() < deadline) {
+		requested = queued;
+	}
+	deadline = 0;
 	struct fan_request request = requested;
 	k_spin_unlock(&sample_lock, key);
 	return request;

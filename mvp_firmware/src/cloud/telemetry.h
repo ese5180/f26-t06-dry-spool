@@ -42,6 +42,9 @@ static inline size_t dryspool_telemetry_channels(const struct dryspool_sample *s
 	return n;
 }
 
+/* Poll the fan command and update this box's reported device shadow. */
+int dryspool_shadow_sync(void);
+
 /* Send the fresh snapshot over an established CoAP connection. Returns a
  * transport error to the connection worker if the session should be retried.
  */

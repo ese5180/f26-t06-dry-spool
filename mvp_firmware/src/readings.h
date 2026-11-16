@@ -33,5 +33,6 @@ void dryspool_publish_sample(struct dryspool_sample *sample);
 /* Copies a consistent snapshot. False before the first pass completes. */
 bool dryspool_read_latest(struct dryspool_sample *out);
 
+void dryspool_queue_fan_request(struct fan_request request, int64_t deadline_ms);
 void dryspool_set_fan_request(struct fan_request request);
 struct fan_request dryspool_get_fan_request(void);

@@ -15,21 +15,35 @@
 
 LOG_MODULE_REGISTER(memfault_fota_support, CONFIG_WIFI_NRF_CLOUD_LOG_LEVEL);
 
+enum phase { IDLE, TRANSFERRING, RESTARTING, FAILED };
+static atomic_t phase;
+const char *memfault_fota_phase(void)
+{
+	static const char *const names[] = {"idle", "transferring", "restarting", "failed"};
+	return names[atomic_get(&phase)];
+}
+
 /* Custom FOTA download callback (enabled through CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM)
  * so that the sample can cleanly disconnect from nRF Cloud before rebooting to apply the update.
  */
 void memfault_fota_download_callback(const struct fota_download_evt *evt)
 {
 	switch (evt->id) {
+	case FOTA_DOWNLOAD_EVT_PROGRESS:
+		atomic_set(&phase, TRANSFERRING);
+		break;
 	case FOTA_DOWNLOAD_EVT_FINISHED:
+		atomic_set(&phase, RESTARTING);
 		LOG_INF("FOTA update downloaded, rebooting to apply it");
 		disconnect_cloud();
 		sample_reboot_normal();
 		break;
 	case FOTA_DOWNLOAD_EVT_ERROR:
+		atomic_set(&phase, FAILED);
 		LOG_ERR("FOTA download failed, cause: %d", evt->cause);
 		break;
 	case FOTA_DOWNLOAD_EVT_CANCELLED:
+		atomic_set(&phase, IDLE);
 		LOG_ERR("FOTA download cancelled");
 		break;
 	default:

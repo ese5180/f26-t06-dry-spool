@@ -34,7 +34,7 @@ main { max-width: 980px; margin: auto; padding: max(16px,env(safe-area-inset-top
 h1, h2, h3, p { margin-top: 0 }
 h1 { font-size: clamp(29px,4.2vw,44px); letter-spacing: -.055em; line-height: 1.17; margin: 0 }
 .titlebar a { color: var(--pine); font-size: 14px; font-weight: 580; padding: 10px 0; text-decoration: none }
-.grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px }
+.grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%, 300px),1fr)); gap: 18px }
 .box, .login { background: var(--surface); border: 1px solid #cbd3c8; border-radius: 16px; box-shadow: 0 3px 10px #20312805 }
 .box { padding: 22px 22px 16px }
 .boxheading, .controlheading { justify-content: space-between; gap: 8px }

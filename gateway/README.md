@@ -1,6 +1,6 @@
 # DrySpool 网关、箱子与云端固件更新
 
-A、B 在箱内采集温湿度、称量耗材并驱动风扇。两台箱子通过 BLE 连接 G。G 只用一个校园 Wi-Fi MAC，通过 CoAP/DTLS 同步 nRF Cloud 的 Device Shadow，通过 HTTPS 转发 Memfault 数据和固件。手机可以在蜂窝网上使用 [DrySpool PWA](../mobile/README.md)。
+A、B 在箱内采集温湿度、称量耗材并驱动风扇。两台箱子通过 BLE 连接 G。G 只用一个校园 Wi-Fi MAC，通过 CoAP/DTLS 同步 nRF Cloud 的 Device Shadow，通过 HTTPS 转发 Memfault 数据和固件。该拓扑配套的[网关版手机看板](https://github.com/ese5180/f26-t06-dry-spool/tree/5cff799265570e2f544c76aa58ac233a34c4e806/mobile)保留在之前的提交。当前分支的三台独立 Wi-Fi 箱子使用[直连固件](../mvp_firmware/README.md)和[三箱看板](../mobile/README.md)。
 
 ## 首次刷机
 

@@ -4,7 +4,7 @@ The nRF7002 DK reads enclosure temperature and humidity from a BME280, estimates
 
 ## Phone dashboard
 
-For the A/B Bluetooth boxes and Wi-Fi gateway, use the [DrySpool mobile PWA](../mobile/README.md). The gateway build reuses the sensor and fan drivers below.
+A, B and C each run this same image and connect directly to Wi-Fi. The [mobile dashboard](../mobile/README.md) reads each board’s own cloud shadow for temperature, humidity, filament remaining, fan controls and firmware state. Start with one box and add the others as they are provisioned.
 
 ## Firmware layout
 
@@ -36,13 +36,13 @@ Run the following commands from the DrySpool repository root in an nRF Connect S
 
 ```sh
 west build -p always --sysbuild -b nrf7002dk/nrf5340/cpuapp/ns \
-  -d build-mvp-cloud mvp_firmware -- \
+  -d build-wifi-box mvp_firmware -- \
   "-DEXTRA_CONF_FILE=$PWD/firmware/local.conf"
 nrfutil device list
-west flash -d build-mvp-cloud --dev-id JLINK_SERIAL
+west flash --no-rebuild -d build-wifi-box --dev-id JLINK_SERIAL
 ```
 
-Replace `JLINK_SERIAL` with the target board’s probe serial number. When moving from the standalone bench firmware, use this wired flash procedure to install MCUboot and the application, then check the calibration and spool ID.
+Repeat the flash command for each board, substituting its J-Link serial number. The same compiled image serves all three. For a board previously running a gateway or BLE image, install the Wi-Fi box baseline by USB first. When moving from the standalone bench firmware, use this wired flash procedure to install MCUboot and the application, then check the calibration and spool ID.
 
 For sensor bench testing, build the standalone firmware with:
 
@@ -68,7 +68,7 @@ Open the application core’s USB virtual serial port at **115200 baud, 8N1**. T
 
 ## Connect to Wi-Fi and nRF Cloud
 
-Each DK has its own device ID and TLS credentials. For a previously onboarded DK, check its existing connection first. For a new board, follow step 4 of the team guide to install the board’s credentials through the application UART using `tls_cred_shell` and register the device in the team’s nRF Cloud project. Keep certificates, private keys, Wi-Fi passwords, and release tokens in restricted local storage. [Device onboarding instructions](../docs/TEAM_SETUP_AND_DEMO.md#4-add-a-new-dk-to-nrf-cloud)
+At 115200 baud, reset each DK and record its `Device Wi-Fi MAC` for network registration and its `nRF Cloud device ID` for the matching dashboard slot. The J-Link serial selects the USB debugger. Each DK has its own TLS credentials. For a new certificate set `--id-str` to the device ID printed by this DK when running the installer. For a previously onboarded DK, check its existing connection first. For a new board, follow step 4 of the team guide to install the board’s credentials through the application UART using `tls_cred_shell` and register the device in the team’s nRF Cloud project. Keep certificates, private keys, Wi-Fi passwords, and release tokens in restricted local storage. [Device onboarding instructions](../docs/TEAM_SETUP_AND_DEMO.md#4-add-a-new-dk-to-nrf-cloud)
 
 Save a WPA2-Personal network and connect from the application shell:
 
@@ -77,7 +77,7 @@ wifi cred add -s YOUR_SSID -k 1 -p YOUR_PASSWORD
 wifi cred auto_connect
 ```
 
-Telemetry starts on connection and runs every 60 seconds by default. Check the device’s messages in nRF Cloud. Each report includes the currently valid channels. Raw NAU7802 counts are available before scale calibration. During an outage the board keeps only the latest sample in RAM. Reconnection resumes with fresh readings without replaying an outage history.
+After clock sync and cloud connection the board exchanges its dashboard shadow approximately every 5 seconds. The sensor history telemetry runs every 60 seconds by default. Check the device’s messages in nRF Cloud. Each report includes the currently valid channels. Raw NAU7802 counts are available before scale calibration. During an outage the board keeps only the latest sample in RAM. Reconnection resumes with fresh readings without replaying an outage history.
 
 | Message appId | Value |
 | --- | --- |
@@ -115,9 +115,9 @@ Use the same DK for the online and offline checks:
    ```sh
    python "$ZEPHYR_BASE/../bootloader/mcuboot/scripts/imgtool.py" verify \
      -k firmware/keys/dryspool-signing.pem \
-     build-mvp-cloud/mvp_firmware/zephyr/zephyr.signed.bin
+     build-wifi-box/mvp_firmware/zephyr/zephyr.signed.bin
    ```
 
-3. In the target cloud project, upload `build-mvp-cloud/mvp_firmware/zephyr/zephyr.signed.bin` as the release payload and `build-mvp-cloud/mvp_firmware/zephyr/zephyr.elf` from the same build for debug symbols. Use these MVP paths in the team guide’s upload examples. Create the N+1 release with the software and hardware identifiers reported by the test DK, then deploy it to that board’s test cohort. [Release upload commands](../docs/TEAM_SETUP_AND_DEMO.md#6-publish-a-new-fota-release)
+3. In the target cloud project, upload `build-wifi-box/mvp_firmware/zephyr/zephyr.signed.bin` as the release payload and `build-wifi-box/mvp_firmware/zephyr/zephyr.elf` from the same build for debug symbols. Use these MVP paths in the team guide’s upload examples. Create the N+1 release with the software and hardware identifiers reported by the test DK, then deploy it to a cohort containing only that board. A, B and C use the same software type `dryspool-wifi-box` and hardware type `nrf7002dk-rev1`. Check cohort membership by serial before activation. [Release upload commands](../docs/TEAM_SETUP_AND_DEMO.md#6-publish-a-new-fota-release)
 4. The device checks for updates periodically. For a manual check, run `mflt get_latest_url` in the UART shell, then `mflt get_latest_release` to download the available release. Watch the HTTPS download, reboot, MCUboot image validation, and application startup. Record the confirmation log. The trial image confirms once settings load, both the BME280 readings and raw NAU7802 counts are valid, and the fan GPIO command succeeds. Confirmation works offline and before scale calibration. If the image is still unconfirmed at the next reset, MCUboot rolls back.
 5. Run `mflt get_device_info` to confirm N+1. Reboot once more, check that the version and calibration persist, and compare the live serial readings with cloud telemetry.

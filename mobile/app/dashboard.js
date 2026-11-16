@@ -1,5 +1,6 @@
 "use client";
 
+import { slots } from "../lib/slots.mjs";
 import { useEffect, useState } from "react";
 
 const MODES = { on: "开启", off: "关闭", auto: "自动" };
@@ -225,7 +226,7 @@ export default function Dashboard() {
       {error && <div className="notice" role="alert">{error}<button onClick={reload}>重试</button></div>}
       {screen === "loading" && !error ? <p role="status">正在连接云端…</p> :
         <section className="grid" aria-label="耗材箱">
-          {["A","B"].map(slot => <Box key={slot} slot={slot} data={devices.find(d => d.slot === slot)}
+          {slots.map(slot => <Box key={slot} slot={slot} data={devices.find(d => d.slot === slot)}
             networkError={!!error} now={now} reload={reload} signIn={signIn} />)}
         </section>}
     </>}

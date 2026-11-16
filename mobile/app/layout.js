@@ -2,7 +2,7 @@ import "./style.css";
 
 export const metadata = {
   title: "DrySpool · 设备看板",
-  description: "查看两台耗材箱的温湿度、耗材余量，并调整风扇模式。",
+  description: "查看三台耗材箱的温湿度、耗材余量，并调整风扇模式。",
   applicationName: "DrySpool",
   appleWebApp: { capable: true, title: "DrySpool", statusBarStyle: "default" },
   icons: { icon: "/icon-192.png", apple: "/icon-180.png" },

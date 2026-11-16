@@ -13,5 +13,6 @@
  * after a successful FOTA update. Must be called once at startup.
  */
 void memfault_fota_support_init(void);
+const char *memfault_fota_phase(void);
 
 #endif /* MEMFAULT_FOTA_SUPPORT_H */

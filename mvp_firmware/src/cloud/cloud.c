@@ -4,12 +4,14 @@
 #include <errno.h>
 #include <date_time.h>
 #include <memfault/ports/zephyr/periodic_upload.h>
+#include <net/nrf_cloud.h>
 #include <net/nrf_cloud_coap.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/net_event.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 
 #include "cloud_connection.h"
@@ -72,12 +74,22 @@ static void run_session(void)
 		LOG_INF("Connected to nRF Cloud; starting telemetry and Memfault release checks");
 		k_event_post(&events, CLOUD_READY);
 		memfault_zephyr_port_periodic_upload_enable(true);
+		int64_t next_telemetry = 0;
 		do {
-			if (dryspool_telemetry_send_latest(session_ready)) {
+			if (dryspool_shadow_sync()) {
+				break;
+			}
+			if (k_uptime_get() >= next_telemetry) {
+				if (dryspool_telemetry_send_latest(session_ready)) {
+					break;
+				}
+				next_telemetry = k_uptime_get() + CONFIG_SENSOR_SAMPLE_INTERVAL_SECONDS * 1000;
+			}
+			if (!session_ready()) {
 				break;
 			}
 		} while (!k_event_wait(&events, SESSION_LOST, false,
-				       K_SECONDS(CONFIG_SENSOR_SAMPLE_INTERVAL_SECONDS)));
+				       K_SECONDS(5)));
 	}
 
 	k_event_clear(&events, CLOUD_READY);
@@ -87,6 +99,13 @@ static void run_session(void)
 
 static void cloud_worker(void *a, void *b, void *c)
 {
+	struct net_if *iface = net_if_get_wifi_sta();
+	const struct net_linkaddr *mac = iface ? net_if_get_link_addr(iface) : NULL;
+	if (mac && mac->len == 6) {
+		LOG_INF("Device Wi-Fi MAC: %02X:%02X:%02X:%02X:%02X:%02X",
+			mac->addr[0], mac->addr[1], mac->addr[2], mac->addr[3],
+			mac->addr[4], mac->addr[5]);
+	}
 	net_mgmt_init_event_callback(&l4_cb, link_changed,
 				     NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED);
 	net_mgmt_add_event_callback(&l4_cb);
@@ -95,6 +114,10 @@ static void cloud_worker(void *a, void *b, void *c)
 	while ((rc = nrf_cloud_coap_init()) != 0) {
 		LOG_WRN("nRF Cloud initialization failed: %d", rc);
 		k_sleep(RETRY);
+	}
+	char id[NRF_CLOUD_CLIENT_ID_MAX_LEN + 1];
+	if (!nrf_cloud_client_id_get(id, sizeof(id))) {
+		LOG_INF("nRF Cloud device ID: %s", id);
 	}
 	if (IS_ENABLED(CONFIG_NRF_CLOUD_CHECK_CREDENTIALS)) {
 		while ((rc = nrf_cloud_credentials_configured_check()) != 0) {

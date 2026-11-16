@@ -36,6 +36,10 @@ int dryspool_telemetry_send_latest(bool (*session_ready)(void))
 		MEMFAULT_METRIC_SET_UNSIGNED(dryspool_filament_g, s.filament_g);
 	}
 
+	if (s.fan_valid) {
+		MEMFAULT_METRIC_SET_UNSIGNED(dryspool_dehumidifier_on, s.fan_on);
+	}
+
 	for (size_t i = 0; i < n; i++) {
 		if (!session_ready()) {
 			return -ENETDOWN;

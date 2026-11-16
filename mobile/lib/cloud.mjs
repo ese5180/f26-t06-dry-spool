@@ -1,44 +1,53 @@
 import { randomInt } from 'node:crypto';
 import { ApiError } from './http.mjs';
+import { slots } from './slots.mjs';
 
 const modes = ['auto', 'on', 'off'];
-const slots = ['A', 'B'];
-const otaStates = ['checking', 'transferring', 'restarting', 'idle', 'failed'];
-const freshness = 45000;
-function timestamp(meta) {
-  return Number.isSafeInteger(meta?.timestamp) && meta.timestamp > 0 ? meta.timestamp * 1000 : 0;
-}
+const phases = ['checking', 'transferring', 'restarting', 'idle', 'failed'];
 const finite = n => Number.isFinite(n) ? n : null;
 
-export function devices(shadow, now = Date.now()) {
-  return slots.map(slot => {
-    const sample = shadow.reported?.dryspool?.[slot] || {};
-    const ts = timestamp(shadow.metadata?.reported?.dryspool?.[slot]?.seq);
-    const online = sample.online === true && ts > 0 && now - ts >= -5000 && now - ts < freshness;
-    const desired = shadow.desired?.config?.[slot];
-    const ack = shadow.reported?.config?.[slot];
-    const pending = Boolean(desired?.request > 0 && desired.expires * 1000 > now &&
-      !(ack?.request === desired.request && ack.mode === desired.mode && ack.expires === desired.expires));
-    return {
-      slot, device: 'DrySpool ' + slot, ts, online, pending, desired: desired?.mode ?? null,
-      desiredId: desired?.request ?? null,
-      temperature: finite(sample.temperature), humidity: finite(sample.humidity), grams: finite(sample.grams),
-      fan: typeof sample.fan === 'boolean' ? sample.fan : null,
-      mode: modes.includes(sample.mode) ? sample.mode : null,
-      firmware: typeof sample.firmware === 'string' ? sample.firmware : null,
-      ota: otaStates.includes(sample.ota) ? sample.ota : null,
-      request: Number.isInteger(sample.request) ? sample.request : null,
-      control: online && sample.control === true && typeof sample.fan === 'boolean'
-    };
-  });
+export function device(slot, shadow, now = Date.now()) {
+  const sample = shadow.reported?.dryspool || {};
+  const ts = Number.isSafeInteger(sample.sample_ms) ? sample.sample_ms : 0;
+  const online = ts > 0 && now - ts >= -5000 && now - ts < 45000;
+  const desired = shadow.desired?.config?.fan;
+  const ack = shadow.reported?.config?.fan;
+  const pending = Boolean(desired?.request > 0 && desired.expires * 1000 > now &&
+    !(ack?.request === desired.request && ack.mode === desired.mode && ack.expires === desired.expires));
+  const env = sample.env_valid === true;
+  const fan = sample.fan_valid === true && typeof sample.fan_on === 'boolean' ? sample.fan_on : null;
+  return {
+    slot, device: 'DrySpool ' + slot, ts, online, pending, desired: desired?.mode ?? null,
+    desiredId: desired?.request ?? null,
+    temperature: env && Number.isFinite(sample.temperature_mc) ? sample.temperature_mc / 1000 : null,
+    humidity: env && Number.isFinite(sample.humidity_mpct) ? sample.humidity_mpct / 1000 : null,
+    grams: sample.grams_valid === true ? finite(sample.filament_g) : null, fan,
+    mode: modes.includes(sample.mode) ? sample.mode : null,
+    firmware: typeof sample.firmware === 'string' ? sample.firmware : null,
+    ota: phases.includes(sample.ota) ? sample.ota : null,
+    request: Number.isInteger(sample.request) ? sample.request : null,
+    control: online && sample.fan_api === 1 && fan !== null
+  };
 }
 
-export async function state(patch, send = fetch) {
-  const { NRF_ORG, NRF_PROJECT, NRF_GATEWAY_ID, DRYSPOOL_OAT } = process.env;
-  if (![NRF_ORG, NRF_PROJECT, NRF_GATEWAY_ID, DRYSPOOL_OAT].every(Boolean)) {
-    throw new ApiError(503, '请在服务器配置 nRF Cloud 项目和 G 的设备身份');
+export function deviceId(slot, env = process.env) {
+  if (!slots.includes(slot)) throw new ApiError(404, '未知箱子');
+  const idFor = s => env['NRF_DEVICE_' + s]?.trim();
+  const id = idFor(slot);
+  if (!id) throw new ApiError(503, '请配置箱 ' + slot + ' 的设备 ID');
+  if (slots.some(s => s !== slot && idFor(s)?.toLowerCase() === id.toLowerCase())) {
+    throw new ApiError(503, '设备 ID 重复，请核对箱 ' + slot + ' 的配置');
   }
-  const path = [NRF_ORG, NRF_PROJECT, NRF_GATEWAY_ID].map(encodeURIComponent);
+  return id;
+}
+
+export async function state(slot, patch, send = fetch) {
+  const id = deviceId(slot);
+  const { NRF_ORG, NRF_PROJECT, DRYSPOOL_OAT } = process.env;
+  if (![NRF_ORG, NRF_PROJECT, DRYSPOOL_OAT].every(Boolean)) {
+    throw new ApiError(503, '请配置 nRF Cloud 项目和服务器令牌');
+  }
+  const path = [NRF_ORG, NRF_PROJECT, id].map(encodeURIComponent);
   const url = 'https://api.nrfcloud.com/v1/organizations/' + path[0] + '/projects/' + path[1] +
     '/long-range/devices/' + path[2] + '/state';
   let res;
@@ -56,16 +65,26 @@ export async function state(patch, send = fetch) {
   throw new ApiError(502, 'nRF Cloud 请求失败（HTTP ' + res.status + '）');
 }
 
+export function devices(call = state) {
+  return Promise.all(slots.map(async slot => {
+    try {
+      return device(slot, await call(slot));
+    } catch (error) {
+      return { ...device(slot, {}), error: error instanceof ApiError ? error.message : '云端读取失败' };
+    }
+  }));
+}
+
 export async function command(slot, mode, call = state, clock = Date.now) {
   if (!slots.includes(slot)) throw new ApiError(404, '未知箱子');
   if (!modes.includes(mode)) throw new ApiError(400, '风扇模式无效');
-  const shadow = await call();
+  const shadow = await call(slot);
   const now = clock();
-  const current = devices(shadow, now).find(box => box.slot === slot);
+  const current = device(slot, shadow, now);
   if (!current.control) throw new ApiError(409, '读数已过期或风扇未就绪，请等待设备上报');
   if (current.pending) throw new ApiError(409, '正在等待上一条指令的回执');
   const request = randomInt(1, 0x7fffffff);
   const expires = Math.floor(now / 1000) + 45;
-  await call({ desired: { config: { [slot]: { mode, request, expires } } } });
+  await call(slot, { desired: { config: { fan: { mode, request, expires } } } });
   return { request, expires };
 }

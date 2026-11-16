@@ -14,7 +14,8 @@ target_sources(app PRIVATE
 
 if(CONFIG_DRYSPOOL_CLOUD)
   set(legacy_src "${CMAKE_CURRENT_SOURCE_DIR}/../firmware/src")
-  target_sources(app PRIVATE src/cloud/cloud.c src/cloud/telemetry.c
+  target_link_libraries(app INTERFACE "-Wl,--require-defined=g_memfault_build_id")
+  target_sources(app PRIVATE src/cloud/cloud.c src/cloud/telemetry.c src/cloud/box_shadow.c
                  "${legacy_src}/memfault_fota_support.c" "${legacy_src}/sample_reboot.c")
   target_sources_ifdef(CONFIG_SAMPLE_MEMFAULT_FOTA app PRIVATE src/trial_image.c)
   target_sources_ifdef(CONFIG_SAMPLE_MEMFAULT_BUTTONS app PRIVATE "${legacy_src}/memfault_buttons.c")

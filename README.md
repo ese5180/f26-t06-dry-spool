@@ -16,8 +16,8 @@
 
 - [DrySpool mobile PWA](mobile/README.md) covers phone installation, Vercel deployment and cloud fan control.
 
-- [Single Wi-Fi gateway and mobile dashboard](gateway/README.md) covers the
-  three-board setup, BLE fan control, and signed OTA demonstration.
+- [Wi-Fi box firmware](mvp_firmware/README.md) covers flashing the same signed image to A, B and C, registering each MAC, onboarding each box and testing per-device OTA.
+- [Earlier BLE gateway setup](gateway/README.md) documents the previous A/B/G hardware arrangement.
 
 - [`firmware/README.md`](firmware/README.md): firmware architecture, build,
   memory map, and verified FOTA results.
