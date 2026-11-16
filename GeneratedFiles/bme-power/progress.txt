@@ -22,3 +22,15 @@ repeatability established. Supply, wiring and firmware sample settings held
 constant; internal board/network runtime activity was not controlled.
 See comparison.json and after/notes.txt for measured results and limitations.
 No push. Wi-Fi code, TF-M fix, partition layout and stacks unchanged.
+
+Five-minute forced-mode repeat completed; no intervening firmware flash.
+299.99616 s, 18.086114410204296 mA, 19.53275354057503 J.
+After excluding first 30 s: 269.99616 s, 14.830317252922898 mA.
+29,999,616 raw packets, zero counter gaps; manifest checksums passed.
+Output OFF. PPK metadata identical to prior runs; USB absent.
+Two BME initializations (2.249513, 5.703683 s), two real samples near startup,
+46/46 address frames ACK at 0x77, ID0x60, forced-mode writes.
+Possible restart/reinitialization, cause not verified; five-minute application
+stability NOT established. No Wi-Fi diagnosis performed.
+No matching 300 s normal-mode run, so no new saving percentage calculated.
+Evidence: forced-300s/ including raw chunk manifest and run-assessment.json.

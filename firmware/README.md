@@ -304,3 +304,47 @@ records a 30-second power-on window plus 32-second I2C capture, and leaves
 output off. Run `decode_bme.py` on that folder to verify ID/readings/ACKs
 and count delivered samples. A single pair cannot establish repeatability
 or isolate the BME contribution from whole-board startup variability.
+
+### Five-minute forced-mode repeat
+
+A further USB-disconnected P21 capture on 2026-11-16 kept the existing
+3.6 V supply, wiring, firmware and sample settings unchanged.
+
+| Window | Duration | Average current | Energy |
+| --- | ---: | ---: | ---: |
+| Full forced-mode run | 299.99616 s | 18.086114 mA | 19.532754 J |
+| Excluding first 30 s | 269.99616 s | 14.830317 mA | 14.414863 J |
+
+Minute averages were 36.146, 13.404, 13.576, 13.629 and 13.675 mA (the final
+minute is 59.99616 s). All 29,999,616 PPK packet counters were continuous;
+raw chunk checksums passed, and PPK metadata matches the earlier captures.
+Output was switched off afterward. Current remains whole-DK input, including
+BME and regulators; these are not isolated sensor-current measurements.
+
+**Stability qualification:** I2C shows two complete BME initialization
+sequences, with sensor soft-reset writes at 2.249513 s and 5.703683 s.
+Both ID reads return 0x60 at 0x77; all 46 address frames ACK. Two completed
+sample bursts yield 23.74 C / 28.701172 %RH and 23.73 C / 28.723633 %RH,
+near 2.66 s and 6.12 s; there are no later BME samples in the capture.
+This is consistent with a restart or reinitialization; UART/reset cause was
+not captured, so five-minute application stability is **not verified**.
+Window energy divided by the two reads is 9.766377 J/read, including all
+startup/background loads. These are not two scheduled periodic samples.
+
+There is no matching five-minute normal-mode capture yet. Do not compare
+this longer average to the earlier 30-second baseline to claim a saving.
+Earlier three-boot UART evidence remains limited to its 30-second windows.
+
+[Power results](../GeneratedFiles/bme-power/forced-300s/power.json),
+[1-second current summary](../GeneratedFiles/bme-power/forced-300s/current-1s.csv),
+[raw chunk manifest](../GeneratedFiles/bme-power/forced-300s/capture.json),
+[I2C capture](../GeneratedFiles/bme-power/forced-300s/i2c.sal), and
+[run assessment](../GeneratedFiles/bme-power/forced-300s/run-assessment.json)
+are retained. Raw samples are split into 8 MB files with no decimation.
+Reproduction (Windows Python, same dependencies as above; USB absent):
+
+```powershell
+python GeneratedFiles/bme-power/capture_long_power.py forced-repeat-300s 300
+python GeneratedFiles/bme-power/analyze_long_power.py forced-repeat-300s
+python GeneratedFiles/bme-power/decode_bme.py GeneratedFiles/bme-power/forced-repeat-300s
+```
