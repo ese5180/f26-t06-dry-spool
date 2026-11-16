@@ -14,8 +14,8 @@ classroom demonstration sequence, follow
 - Wi-Fi connection management and nRF Cloud CoAP device messages.
 - A queued, retrying telemetry path for temperature, humidity, remaining
   filament mass, and dehumidifier state.
-- A stable `dryspool_sensors` boundary; deterministic simulated readings are
-  enabled until the team finalizes the sensor and load-cell hardware.
+- A stable `dryspool_sensors` boundary using Zephyr's BME280 driver for
+  temperature and humidity; filament and dehumidifier state remain simulated.
 - Memfault diagnostics and HTTPS transport within nRF Cloud.
 - Memfault Release Management checks and HTTPS firmware download.
 - MCUboot with a team-owned ECDSA-P256 signing key.
@@ -163,7 +163,72 @@ The complete two-version flow was tested on the connected nRF7002 DK on
 
 ## Hardware work still to integrate
 
-Only `src/dryspool_sensors.c` is intentionally simulated. Once the parts are
-selected, replace its two functions with real Zephyr sensor/load-cell drivers
-and dehumidifier control. The Wi-Fi, queueing, cloud, diagnostics, signing,
-memory layout, and FOTA layers should remain unchanged.
+Filament and dehumidifier state in `src/dryspool_sensors.c` remain simulated.
+Load-cell integration and physical dehumidifier control remain future work.
+
+## BME280 communication and boot check
+
+Verified on 2026-11-16 with the complete NCS 3.4.0
+`nrf7002dk/nrf5340/cpuapp/ns` sysbuild, firmware version `0.1.7`.
+
+| Signal | DK pin | Logic 2 connection on sensor side |
+| --- | --- | --- |
+| SDA | P1.02 / D14 (`arduino_i2c`) | CH0 |
+| SCL | P1.03 / D15 (`arduino_i2c`) | CH1 |
+| GND | Common ground | GND |
+
+The operator-supplied power arrangement is regulated 3.3 V for the sensor
+and a bidirectional I2C shifter referenced to 1.8 V on the DK side. Signal
+voltages were not measured in this check. The detected sensor is BME280:
+address **0x77**, chip-ID register **0xD0 = 0x60**. The initial expectation
+of 0x76 was corrected after the hardware probe and operator confirmation.
+
+From an NCS 3.4.0 terminal in `firmware/`, with the ignored local configuration
+and team signing key installed:
+
+```powershell
+west build --sysbuild -b nrf7002dk/nrf5340/cpuapp/ns . -d ../build-closed-loop -- `
+  '-DEXTRA_CONF_FILE=coap.conf;coap-fota.conf;local.conf'
+west flash --no-rebuild -d ../build-closed-loop --dev-id 1050794921
+```
+
+UART COM7 at 115200 baud reported these real startup samples:
+
+| Commanded startup | Temperature | Humidity | Reset-free observation |
+| --- | ---: | ---: | --- |
+| Software reset 1 | 24.28 C | 30.77 %RH | 30 s, passed |
+| Software reset 2 | 24.28 C | 30.98 %RH | 30 s, passed |
+| Pin reset 3 | 24.31 C | 31.10 %RH | 30 s, passed |
+
+All three runs showed exactly one bootloader and application startup, the
+same firmware build ID, sensor ID 0x60 at 0x77, and a responsive version shell.
+The early-init fix disables TF-M's dedicated UART1/stdout logging reservation:
+UART1 and TWIM1 share serial block 1. Application UART0, the partition layout,
+and stack allocations are retained. Application RAM use is 394156/409600 B.
+
+Logic 2 captured 8 seconds at 2 MHz on a real Logic 8. All 36 address frames
+to 0x77 were acknowledged. The capture includes an acknowledged write of
+register 0xD0 and repeated-start read returning 0x60. The final read-byte
+master NACK and the unused 0x76 discovery-probe NACK are expected.
+See [the capture](../GeneratedFiles/closed-loop/bme-boot.sal),
+[decoded transactions](../GeneratedFiles/closed-loop/bme-i2c.csv), and
+[boot results](../GeneratedFiles/closed-loop/bme-boot-results.json).
+
+**Separate Wi-Fi issue:** `RDSR2 failed` / RPU initialization failure occurs
+on both unmodified `b4c61b0` and this image. This check does not verify live
+cloud reporting or FOTA transport. Their application paths remain unchanged.
+
+**PPK2:** baseline average, optimized average, and percentage change are not
+measured. Power measurements and pushing are paused by the operator; no
+PPK2 settings or sensor power optimization were applied.
+
+Short demo procedure:
+
+1. Keep the supplied sensor/level-shifter wiring and connect the DK USB for UART/debug.
+2. Build and flash with the commands above.
+3. With Logic 2 automation enabled, run the Windows Python script
+   `GeneratedFiles/closed-loop/verify_bme_boots.py` from the repository root
+   (`pyserial` and `logic2-automation` required). It uses COM7 and probe
+   1050794921, commands three startups, and checks 30-second windows.
+4. Review the three UART logs, JSON results and Logic 2 capture; track Wi-Fi
+   separately. The script does not control PPK2.

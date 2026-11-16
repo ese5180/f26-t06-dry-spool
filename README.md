@@ -108,10 +108,11 @@ product interface for:
 - estimated remaining filament (`DRYSPOOL_FILAMENT_G`); and
 - dehumidifier state (`DRYSPOOL_DEHUMIDIFIER_ON`).
 
-The final sensor and load-cell parts have not yet been selected, so the current
-backend deliberately emits deterministic simulated readings. Only
-`firmware/src/dryspool_sensors.c` must be replaced when those parts are fixed;
-the cloud and FOTA framework is already the full firmware framework.
+Temperature and humidity now use a BME280 at I2C address `0x77` through
+Zephyr's sensor driver. Filament and dehumidifier state remain simulated.
+Sensor identity, Logic 2 ACK evidence, wiring, and three successful boot
+checks are documented in the [firmware README](firmware/README.md#bme280-communication-and-boot-check).
+PPK measurements are paused; the existing Wi-Fi RDSR2 error remains a separate issue.
 
 ### Boot and update process
 
