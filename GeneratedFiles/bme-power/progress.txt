@@ -46,3 +46,16 @@ Logic 22/22 address frames ACK and F4=57 normal-mode write verified.
 PPK output remains OFF. Await DK USB disconnect for matching normal 300 s
 power capture. Forced 300 s repeated-initialization limitation still applies;
 no matching long-mode power comparison yet. No Wi-Fi changes or push.
+
+Matched normal300s capture complete at same3.6V, USB absent, output now OFF.
+Actual299.99616s, mean18.425551099078397mA, energy19.899340472186275J.
+Post-first30s mean14.895920769101599mA over269.99616s.
+29,999,616 packets, zero gaps, hashes verified; metadata matches forced300s.
+One BME initialization, 22 address ACKs, F4=57 normal mode, ID0x60 at0x77,
+one completed sample23.69C/28.3125%RH. No later BME reads in the capture.
+Observed forced current reduction1.842206% full window,0.440413% excluding
+first30s. One run/mode and differing initialization counts do not establish
+causal BME savings, repeatability, periodic reporting or long-run stability.
+Evidence normal-300s/, long-comparison.json and long-power-current.png.
+DK left in normal comparison mode; source default forced remains unchanged.
+No further firmware changes, Wi-Fi diagnosis or push.

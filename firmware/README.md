@@ -364,6 +364,50 @@ The normal image passed three 30-second UART boots (23.66–23.67 C and
 22 acknowledged address frames and `ctrl_meas=0x57`. Application RAM remains
 394156 B; flash is 734232 B. See [normal boot evidence](../GeneratedFiles/bme-power/normal-usb-boots/bme-boot-results.json)
 and [mode verification](../GeneratedFiles/bme-power/normal-usb-boots/mode-verification.json).
-PPK output remains off; the matching 300-second normal-mode power capture is
-pending DK USB disconnection. These checks do not resolve the repeated
+The matching normal-mode capture is now complete with USB disconnected,
+and PPK output is off. These checks do not resolve the repeated
 initialization seen in the USB-disconnected forced-mode run.
+
+### Matched five-minute power results
+
+Both captures used 3.6 V Source Meter into P21, P22/P23 jumpers installed,
+USB disconnected, and the same sample settings, wiring and capture method.
+The scope is whole DK input including the DK-powered BME. Each contains
+29,999,616 raw samples over 299.99616 s, with zero counter gaps and verified
+chunk checksums. PPK configuration/calibration metadata are byte-identical.
+
+| Window | Normal mean | Forced mean | Forced current reduction |
+| --- | ---: | ---: | ---: |
+| Full 299.99616 s | 18.425551 mA | 18.086114 mA | 1.842206% |
+| Same first 30 s excluded | 14.895921 mA | 14.830317 mA | 0.440413% |
+
+Total energy was 19.899340 J normal and 19.532754 J forced. Both runs show
+substantial early current activity; the [one-second current plot](../GeneratedFiles/bme-power/long-power-current.png)
+preserves that temporal context. These observed differences do **not**
+establish repeatability or a causal BME-only saving from one pair.
+Normal mode has one BME initialization and one completed read (23.69 C /
+28.3125 %RH, ID0x60 at0x77, 22/22 address frames ACK). Forced mode has two
+initializations and two startup reads. This mismatch and lack of continuous
+UART/reset-cause evidence leave five-minute application stability unverified.
+There are no later BME sample reads in either I2C capture; periodic reporting
+was not demonstrated. Whole-window energy per read is not a useful direct
+cross-mode efficiency comparison because those startup-read counts differ.
+
+Normal [raw manifest](../GeneratedFiles/bme-power/normal-300s/capture.json),
+[power results](../GeneratedFiles/bme-power/normal-300s/power.json),
+[I2C capture](../GeneratedFiles/bme-power/normal-300s/i2c.sal),
+[run notes](../GeneratedFiles/bme-power/normal-300s/notes.txt), and
+[reproducible comparison](../GeneratedFiles/bme-power/long-comparison.json)
+are retained. The DK is left flashed in **normal mode**, PPK output off.
+No Wi-Fi code was changed or diagnosed; nothing pushed.
+
+For a fresh matching normal capture after flashing the normal variant above:
+
+```powershell
+python GeneratedFiles/bme-power/capture_long_power.py normal-repeat-300s 300
+python GeneratedFiles/bme-power/analyze_long_power.py normal-repeat-300s
+python GeneratedFiles/bme-power/decode_bme.py GeneratedFiles/bme-power/normal-repeat-300s
+```
+
+Replay the saved comparison with `compare_long_power.py`; generate the plot
+with `plot_long_power.py` (matplotlib). Neither tool accesses hardware.

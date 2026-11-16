@@ -115,7 +115,11 @@ checks are documented in the [firmware README](firmware/README.md#bme280-communi
 USB-disconnected P21 captures measured 48.468 mA before and 50.147 mA after
 forced sampling over approximately 30 seconds each: a 3.46% increase, so
 this pair does not demonstrate a saving. Raw data and scope limitations
-are in the firmware README. The existing Wi-Fi RDSR2 error remains separate.
+are in the firmware README. A subsequent five-minute pair measured
+18.426 mA normal and 18.086 mA forced (1.84% lower; 0.44% with the first
+30 seconds excluded). Whole-board variation and repeated sensor initialization
+prevent a causal or repeatable BME-only saving claim. The existing Wi-Fi
+RDSR2 issue remains separate.
 
 ### Boot and update process
 
