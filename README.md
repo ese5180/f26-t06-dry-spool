@@ -112,14 +112,7 @@ Temperature and humidity now use a BME280 at I2C address `0x77` through
 Zephyr's sensor driver. Filament and dehumidifier state remain simulated.
 Sensor identity, Logic 2 ACK evidence, wiring, and three successful boot
 checks are documented in the [firmware README](firmware/README.md#bme280-communication-and-boot-check).
-USB-disconnected P21 captures measured 48.468 mA before and 50.147 mA after
-forced sampling over approximately 30 seconds each: a 3.46% increase, so
-this pair does not demonstrate a saving. Raw data and scope limitations
-are in the firmware README. A subsequent five-minute pair measured
-18.426 mA normal and 18.086 mA forced (1.84% lower; 0.44% with the first
-30 seconds excluded). Whole-board variation and repeated sensor initialization
-prevent a causal or repeatable BME-only saving claim. The existing Wi-Fi
-RDSR2 issue remains separate.
+The closed-loop sensor and power experiment is summarized in [section 3.7](#closed-loop-development-bme280-and-power-37).
 
 ### Boot and update process
 
@@ -218,6 +211,82 @@ path for diagnostics, release checks, and the payload download.
 - [ ] Each teammate copies the private signing key out of band and independently builds/flashes.
 - [x] Provision the connected DK's nRF Cloud credentials and Wi-Fi network.
 - [x] Perform the live telemetry and two-version FOTA/rollback checkoff on hardware.
+
+## Closed-loop development: BME280 and power (3.7)
+
+The Hapimatic/Codex task began from `origin/main` at `b4c61b0` on the
+[`closed-loop-bme-power` branch](https://github.com/ese5180/f26-t06-dry-spool/tree/closed-loop-bme-power).
+The requirements were to replace simulated temperature and humidity with a
+real BME280, build and flash the complete `nrf7002dk/nrf5340/cpuapp/ns`
+firmware, verify I2C and boot behavior with Logic 2 and UART, then compare
+whole-board current before and after a BME low-power mode change with PPK2.
+The agent saved intermediate code, HIL evidence, raw measurements, and analysis
+in separate commits. Private credentials and the signing key stayed outside Git.
+
+### Peripheral implementation and HIL verification
+
+- The BME280 is connected directly to DK-powered VCC/GND and I2C on
+  **SDA D14/P1.02** and **SCL D15/P1.03**. The detected address is **0x77**;
+  chip ID register `0xD0` returned **0x60**. The sensor read uses Zephyr's
+  BME280 driver to produce real Celsius and relative-humidity values.
+- Initial full-image boots faulted during I2C setup because TF-M reserved
+  UART1, which shares hardware block 1 with TWIM1. The fix disables TF-M's
+  dedicated secure UART logging while retaining the application UART,
+  partition layout, and stack allocations.
+- The fixed signed image built and flashed successfully. **Three of three**
+  commanded UART boot checks passed without spontaneous resets during their
+  30-second observation windows. Logic 2 recorded **36/36 acknowledged**
+  BME address frames and a chip-ID read of `0x60`.
+
+The [wiring, UART, and Logic 2 results](firmware/README.md#bme280-communication-and-boot-check)
+link to the saved [I2C capture](GeneratedFiles/closed-loop/bme-boot.sal),
+[decoded transactions](GeneratedFiles/closed-loop/bme-i2c.csv), and
+[boot results](GeneratedFiles/closed-loop/bme-boot-results.json).
+
+### Power-mode change and PPK2 comparison
+
+The only sensor power-mode change was `CONFIG_BME280_MODE_FORCED=y`: a
+conversion is requested at `sensor_sample_fetch()`, after which the BME280
+returns to sleep. Normal mode converts continuously. PPK2 supplied **3.6 V**
+to **P21** in Source Meter mode with the DK debugger USB disconnected and
+P22/P23 jumpers installed. The measured current is for the **whole DK input,
+including the DK-powered BME280**, rather than for the sensor alone.
+
+| PPK2 window | Normal mode | Forced mode | Observed change |
+| --- | ---: | ---: | ---: |
+| Approximately 30 s after power-on | 48.468 mA | 50.147 mA | Forced **3.46% higher** |
+| Matched 299.996 s captures | 18.426 mA | 18.086 mA | Forced **1.84% lower** |
+| Same five-minute captures, first 30 s excluded | 14.896 mA | 14.830 mA | Forced **0.44% lower** |
+
+Both five-minute captures contain 29,999,616 continuous PPK packets, with
+matching configuration/calibration metadata and verified raw-file checksums.
+The [current-profile plot](GeneratedFiles/bme-power/long-power-current.png),
+[comparison data](GeneratedFiles/bme-power/long-comparison.json), and
+[full method and limitations](firmware/README.md#matched-five-minute-power-results)
+are retained in the repository. Each mode has only one five-minute run; the
+forced-mode I2C capture shows **two sensor initialization sequences** versus
+one in normal mode. UART was disconnected during power capture, so the reason
+for the repeated initialization and five-minute application stability remain
+unverified. Network and other DK activity can dominate this small difference.
+**These results do not prove a repeatable or BME-only power saving.** The
+earlier Wi-Fi `RDSR2` issue was outside this sensor/power task.
+
+### Commit trail and demonstration
+
+| Milestone | Commit |
+| --- | --- |
+| Add real BME temperature/humidity readings | [`43f8d68`](https://github.com/ese5180/f26-t06-dry-spool/commit/43f8d68) |
+| Verify I2C and three successful boots | [`9018d63`](https://github.com/ese5180/f26-t06-dry-spool/commit/9018d63) |
+| Enable forced sampling | [`1315752`](https://github.com/ese5180/f26-t06-dry-spool/commit/1315752) |
+| Save the initial PPK baseline and raw capture | [`1f0915c`](https://github.com/ese5180/f26-t06-dry-spool/commit/1f0915c) |
+| Save matched five-minute normal-mode capture and comparison | [`eed6504`](https://github.com/ese5180/f26-t06-dry-spool/commit/eed6504) |
+| Document the measured result and its limits | [`44d8fd8`](https://github.com/ese5180/f26-t06-dry-spool/commit/44d8fd8) |
+
+For a local sensor demonstration, connect the DK debugger USB and run
+`py firmware/demo_bme_serial.py --port COM7`. The script sends the
+`bme_read` shell command every two seconds and shows live readings until
+Ctrl+C. This later demo image adds a shell command; the PPK numbers above
+describe the exact earlier images used for those captures.
 
 ## Fleet management with Memfault (3.11)
 
