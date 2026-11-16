@@ -1,0 +1,29 @@
+After firmware: forced sampling, code commit 1315752; full cpuapp/ns sysbuild,
+MCUboot and TF-M flashed and verified; application build ID
+5493824659416a01c8ff5ecb59e06ae8e24bf00d.
+Three 30-second UART boots with responsive shell passed before measurement.
+Only firmware change relative to baseline: CONFIG_BME280_MODE_FORCED=y.
+No supply, application interval, oversampling, logging, stack, partition,
+TF-M UART fix, or Wi-Fi application changes.
+Operator disconnected DK USB; live Windows Ports check confirmed COM6/COM7
+absent, PPK COM8/COM16 present. Same P21 input, P22/P23 jumpers installed,
+DK-powered BME direct I2C P1.02/P1.03. BME is included in whole DK input scope.
+Same capture_power.py as baseline: 2-second power-off preamble, nominal
+30-second power-on acquisition at existing 3.6 V Source Meter setting,
+100 ksample/s PPK and 32-second 2 MHz Logic capture. Output off afterward.
+Metadata/calibration coefficients byte-identical to baseline.
+29.98784 seconds, 2,998,784 packets, zero counter discontinuities.
+50.14707639751728 mA average, 5.413689012515489 J window energy.
+One delivered sensor sample: 23.64 C / 29.2861328125 %RH, reconstructed from
+actual I2C raw data and captured calibration registers. ID 0x60 at 0x77.
+All 23 address frames ACK, F4=55 forced-mode writes verified.
+Energy per delivered sample equals whole DK window energy, not BME-only energy.
+Average current increased by 3.464907%; no measured saving demonstrated.
+One pair of startup windows cannot isolate BME current or establish
+repeatability. Startup/other board activity was not controlled beyond the
+same external supply, wiring, USB absence, firmware settings and procedure.
+Existing Wi-Fi issue was not investigated. No UART attached during power
+capture; bus shows initialization and completed sample but cannot prove
+application responsiveness throughout idle time. Calibrated:0 metadata
+retained; no independent meter calibration/physical voltage check.
+Raw binary is original PPK 4-byte sample packets, not native .ppk2 format.

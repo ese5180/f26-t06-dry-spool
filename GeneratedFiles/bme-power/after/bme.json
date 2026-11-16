@@ -1,0 +1,78 @@
+{
+  "chip_id": "0x60",
+  "address": "0x77",
+  "address_frames": 23,
+  "all_address_frames_acked": true,
+  "delivered_samples": [
+    {
+      "time_s": 2.6587525,
+      "raw": [
+        83,
+        135,
+        208,
+        129,
+        8,
+        224,
+        97,
+        23
+      ],
+      "temperature_c": 23.64,
+      "humidity_pct": 29.2861328125,
+      "plausible": true
+    }
+  ],
+  "sample_count": 1,
+  "register_writes": [
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        224,
+        182
+      ],
+      "time": 2.2459565
+    },
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        242,
+        5
+      ],
+      "time": 2.2551925
+    },
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        245,
+        168
+      ],
+      "time": 2.2556155
+    },
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        244,
+        85
+      ],
+      "time": 2.256038
+    },
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        244,
+        85
+      ],
+      "time": 2.5235325
+    }
+  ],
+  "limitation": "I2C proves sensor initialization and completed application sample fetch; no USB UART during P21 measurement, so later application stability is not observable from an idle I2C bus."
+}

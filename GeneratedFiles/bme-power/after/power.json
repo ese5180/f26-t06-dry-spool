@@ -1,0 +1,16 @@
+{
+  "duration_s": 29.98784,
+  "samples": 2998784,
+  "counter_discontinuities": 0,
+  "average_current_ma": 50.14707639751728,
+  "min_current_ma": -0.0009083866231593365,
+  "max_current_ma": 572.4887995002224,
+  "energy_j": 5.413689012515489,
+  "supply_v": 3.6,
+  "scope": "P21 whole DK input including DK-powered BME; USB disconnected; P22/P23 installed",
+  "window": "30 second power-on window including startup, output switched off afterward",
+  "conversion": "ppk2-api 0.9.2 factory coefficients and range-transition filter; 100 ksample/s",
+  "delivered_sensor_samples": 1,
+  "window_energy_per_delivered_sample_j": 5.413689012515489,
+  "energy_scope": "Whole DK power-on window per delivered BME sample, not isolated sensor conversion energy"
+}
