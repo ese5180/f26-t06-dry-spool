@@ -14,17 +14,16 @@
 }
 * { box-sizing: border-box }
 body { margin: 0 }
-button, input { font: inherit }
+button { font: inherit }
 button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation }
 button { cursor: pointer }
 button:disabled { cursor: default }
-button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #5e7a25; outline-offset: 3px }
+button:focus-visible, a:focus-visible { outline: 3px solid #5e7a25; outline-offset: 3px }
 main { max-width: 980px; margin: auto; padding: max(16px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(44px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left)) }
-.brandbar, .brandbar nav, .brand, .titlebar, .boxheading, .boxheading h2, .controlheading, .state { display: flex; align-items: center }
+.brandbar, .brand, .titlebar, .boxheading, .boxheading h2, .controlheading, .state { display: flex; align-items: center }
 .brandbar { min-height: 60px; border-bottom: 1px solid var(--line); justify-content: space-between; gap: 10px }
 .brand { font-size: 23px; font-weight: 750; letter-spacing: -1px; gap: 9px }
 .brand img { border-radius: 9px }
-.brandbar nav { gap: 15px }
 .textbutton { border: 0; background: none; color: var(--muted); padding: 10px 0; font-size: 14px; min-height: 44px }
 .textbutton:hover, .titlebar a:hover { text-decoration: underline; text-underline-offset: 4px }
 .install { position: relative }
@@ -35,7 +34,7 @@ h1, h2, h3, p { margin-top: 0 }
 h1 { font-size: clamp(29px,4.2vw,44px); letter-spacing: -.055em; line-height: 1.17; margin: 0 }
 .titlebar a { color: var(--pine); font-size: 14px; font-weight: 580; padding: 10px 0; text-decoration: none }
 .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%, 300px),1fr)); gap: 18px }
-.box, .login { background: var(--surface); border: 1px solid #cbd3c8; border-radius: 16px; box-shadow: 0 3px 10px #20312805 }
+.box { background: var(--surface); border: 1px solid #cbd3c8; border-radius: 16px; box-shadow: 0 3px 10px #20312805 }
 .box { padding: 22px 22px 16px }
 .boxheading, .controlheading { justify-content: space-between; gap: 8px }
 h2 { font-size: 21px; margin: 0; gap: 9px; letter-spacing: -.04em }
@@ -63,15 +62,9 @@ h3 { font-size: 16px; margin: 0 }
 .firmware dd { font-family: inherit; font-size: 14px; line-height: 1.4; letter-spacing: normal; overflow-wrap: anywhere }
 .notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff1d5; color: #643e11; border: 1px solid #d4b885; border-radius: 8px; padding: 8px 14px; margin-bottom: 16px; font-size: 14px }
 .notice button { background: none; color: inherit; border: none; text-decoration: underline; min-height: 36px }
-.login { margin: max(42px,8vh) auto; max-width: 395px; padding: 30px }
-.login h1 { font-size: 28px; margin-bottom: 25px }
-.login label { font-size: 14px; color: var(--muted) }
-.login input { display: block; font-size: 16px; padding: 11px 12px; border: 1px solid #9daa9d; border-radius: 7px; width: 100%; margin-top: 7px }
-.primary { margin-top: 18px; width: 100%; background: var(--pine); color: white; min-height: 46px; border-radius: 7px; border: none; font-weight: 600 }
 @media (max-width: 670px) {
   main { padding-left: max(16px,env(safe-area-inset-left)); padding-right: max(16px,env(safe-area-inset-right)) }
   .grid { grid-template-columns: 1fr; gap: 15px }
   .titlebar { margin: 26px 0 16px }
   .box { padding: 18px }
-  .brandbar nav { gap: 11px }
 }

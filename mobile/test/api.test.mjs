@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { command, device, deviceId, devices, state } from '../lib/cloud.mjs';
 import { input } from '../lib/http.mjs';
-import { login, requireSession } from '../lib/session.mjs';
+import { GET } from '../app/api/devices/route.js';
+import { POST } from '../app/api/[slot]/fan/route.js';
 
 const now = 1800000000000;
 function sample(ts = now) {
@@ -53,29 +54,36 @@ test('C gets its own state URL and acknowledgement; stale commands expire', asyn
   assert.equal(device('C',s,now).pending,false);
   await assert.rejects(command('D','on',call,()=>now),{status:404});
 });
-test('login cookie is signed, expires, and rejects arbitrary requests', () => {
-  process.env.DRYSPOOL_PASSWORD = 'local-only-test-value';
-  const req = new Request('https://example.test');
-  assert.throws(()=>login(req,'wrong',now),{status:401});
-  const cookie=login(req,process.env.DRYSPOOL_PASSWORD,now);
-  assert.match(cookie,/HttpOnly/);
-  assert.match(cookie,/; Secure/);
-  const headers={ cookie: cookie.split(';')[0] };
-  const signed = new Request(req,{headers});
-  requireSession(signed,now+5000);
-  assert.throws(()=>requireSession(signed,now+12*3600000),{status:401});
-  assert.throws(()=>requireSession(new Request(req,{headers:{cookie:headers.cookie+'a'}}),now),{status:401});
+test('dashboard works without a session and only operates a ready fan', async t => {
+  const writes = [];
+  Object.assign(process.env,{NRF_ORG:'test',NRF_PROJECT:'test',NRF_DEVICE_A:'a',NRF_DEVICE_B:'b',NRF_DEVICE_C:'c',DRYSPOOL_OAT:'test-only'});
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    if (options.method === 'GET') return Response.json(sample(url.endsWith('/c/state') ? 0 : Date.now()));
+    writes.push(url);
+    return new Response(null, {status:202});
+  });
+  const list = await GET(new Request('https://example.test/api/devices'));
+  assert.equal(list.status,200);
+  assert.deepEqual((await list.json()).map(d=>d.slot),['A','B','C']);
+  const request = slot => new Request('https://example.test/api/' + slot + '/fan',{method:'POST',
+    headers:{origin:'https://example.test','content-type':'application/json'},body:'{"mode":"auto"}'});
+  for (const [slot, status] of [['C',409],['B',202]]) {
+    const response = await POST(request(slot),{params:Promise.resolve({slot})});
+    assert.equal(response.status,status);
+  }
+  assert.equal(writes.length,1);
+  assert.ok(writes[0].endsWith('/b/state'));
 });
 test('mutating endpoints require same-origin JSON', async () => {
-  const url='https://example.test/api/login';
-  const body='{"password":"123"}';
+  const url='https://example.test/api/A/fan';
+  const body='{"mode":"auto"}';
   const make=origin=>new Request(url,{method:'POST',headers:{origin,'content-type':'application/json'},body});
-  assert.deepEqual(await input(make('https://example.test')), {password:'123'});
+  assert.deepEqual(await input(make('https://example.test')), {mode:'auto'});
   await assert.rejects(input(make('https://another.test')),{status:403});
 });
 test('browser origin is matched against the public Host behind the Next listener', async () => {
-  const req=new Request('http://localhost:3000/api/login', {method:'POST',
+  const req=new Request('http://localhost:3000/api/A/fan', {method:'POST',
     headers:{host:'127.0.0.1:3000',origin:'http://127.0.0.1:3000','content-type':'application/json'},
-    body:'{"password":"local"}'});
-  assert.deepEqual(await input(req),{password:'local'});
+    body:'{"mode":"on"}'});
+  assert.deepEqual(await input(req),{mode:'on'});
 });

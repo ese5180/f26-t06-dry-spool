@@ -1,6 +1,6 @@
 # DrySpool 手机看板
 
-手机和电脑共用一个 Next.js PWA。A、B、C 是三台独立的 Wi-Fi 耗材箱。每台各用自己的设备证书连接 nRF Cloud，各有一个 Device Shadow。看板后端按设备 ID 读取温湿度、余量、风扇和固件状态，并把指令发给选中的箱子。使用校园网时登记三块板各自的 Wi-Fi MAC。
+手机和电脑共用一个 Next.js PWA。A、B、C 是三台独立的 Wi-Fi 耗材箱。每台各用自己的设备证书连接 nRF Cloud，各有一个 Device Shadow。看板后端按设备 ID 读取温湿度、余量、风扇和固件状态，并把指令发给选中的箱子。任何拿到看板网址的人都可以查看数据、操作在线设备的风扇。使用校园网时登记三块板各自的 Wi-Fi MAC。
 
 ## 运行与部署
 
@@ -11,7 +11,6 @@
 | `NRF_ORG`、`NRF_PROJECT` | nRF Cloud 组织和项目 slug，可从团队项目地址读取 |
 | `NRF_DEVICE_A`、`NRF_DEVICE_B`、`NRF_DEVICE_C` | 分别填写三台箱子启动时打印的 nRF Cloud device ID。可以先填一台，其他卡片会提示缺少 ID |
 | `DRYSPOOL_OAT` | 项目范围的 nRF Cloud Organization Auth Token，Device Data → Manage（读写 shadow） |
-| `DRYSPOOL_PASSWORD` | 演示成员的共享登录口令，可用 `openssl rand -hex 16` 本机生成 |
 | `NEXT_PUBLIC_NRF_CLOUD_RELEASES_URL` | 可选，手机页上的团队 OTA Releases 链接。它是公开 URL |
 | `NEXT_PUBLIC_NRF_CLOUD_METRICS_URL` | 可选，团队 nRF Cloud 历史指标看板的公开 URL，访问页面需登录云端 |
 
@@ -21,7 +20,7 @@ pnpm test
 pnpm build
 ```
 
-本机测试时运行 `pnpm start --hostname 127.0.0.1`，打开 `http://127.0.0.1:3000`，输入 `DRYSPOOL_PASSWORD`。修改 `.env.local` 后重启服务。同一可信私人 Wi-Fi 下要用手机测试，可先停止本机服务，改用 `pnpm start --hostname 0.0.0.0`，在手机浏览器打开 `http://<Mac 的局域网 IP>:3000`。局域网 HTTP 适合测试网页操作；安装 PWA 和 Service Worker 使用受信任的 HTTPS 地址。
+本机测试时运行 `pnpm start --hostname 127.0.0.1`，打开 `http://127.0.0.1:3000` 即可进入看板。修改 `.env.local` 后重启服务。同一可信私人 Wi-Fi 下要用手机测试，可先停止本机服务，改用 `pnpm start --hostname 0.0.0.0`，在手机浏览器打开 `http://<Mac 的局域网 IP>:3000`。局域网 HTTP 适合测试网页操作；安装 PWA 和 Service Worker 使用受信任的 HTTPS 地址。
 
 日后部署到 Vercel 时选择 Next.js 预设，只上传 `mobile` 目录，将上表变量设置在项目服务端。首次打开 HTTPS 网址后，在 iPhone Safari 的分享菜单选择「添加到主屏幕」，在 Android 的浏览器菜单选择安装。手机可以用蜂窝网访问部署后的站点。
 
