@@ -87,14 +87,6 @@ config SENSOR_SAMPLE_INTERVAL_SECONDS
 	help
 	  Sets the time to wait between each sensor sample.
 
-config DRYSPOOL_SIMULATED_SENSORS
-	bool "Use simulated DrySpool sensor readings"
-	default y
-	help
-	  Provides deterministic temperature, humidity, remaining-filament, and
-	  dehumidifier readings until the production sensors and drivers are selected.
-	  Disable this option when a real DrySpool board sensor backend is added.
-
 choice
 	prompt "LED indication"
 	default LED_INDICATION_GPIO if $(dt_compat_enabled,gpio-leds)

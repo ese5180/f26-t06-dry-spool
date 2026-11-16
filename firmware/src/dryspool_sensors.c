@@ -1,40 +1,80 @@
 /* SPDX-License-Identifier: LicenseRef-Nordic-5-Clause */
 
 #include <errno.h>
-#include <stddef.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 
 #include "dryspool_sensors.h"
 
+LOG_MODULE_REGISTER(dryspool_sensors, LOG_LEVEL_INF);
+
+#define BME_NODE DT_NODELABEL(dryspool_bme280)
+static const struct device *const bme = DEVICE_DT_GET(BME_NODE);
+static const struct device *const bus = DEVICE_DT_GET(DT_BUS(BME_NODE));
+
 int dryspool_sensors_init(void)
 {
-	/* Replace this with device_is_ready() checks when the sensor and load-cell
-	 * choices are finalized. Keeping this boundary stable lets those drivers be
-	 * developed and tested without changing the cloud or FOTA layers.
-	 */
+	bool found = false;
+
+	if (!device_is_ready(bus)) {
+		return -ENODEV;
+	}
+	/* Probe only the Bosch addresses; reject BMP280 (no humidity). */
+	for (uint16_t addr = 0x76; addr <= 0x77; addr++) {
+		uint8_t id;
+		int ret = i2c_reg_read_byte(bus, addr, 0xd0, &id);
+
+		if (ret == 0) {
+			LOG_INF("BME probe: address 0x%02x, chip ID 0x%02x", addr, id);
+			if (addr != DT_REG_ADDR(BME_NODE) || id != 0x60) {
+				LOG_ERR("Unexpected sensor identity/address; expected BME280 at 0x%02x",
+					(unsigned int)DT_REG_ADDR(BME_NODE));
+				return -ENODEV;
+			}
+			found = true;
+		}
+	}
+	if (!found || !device_is_ready(bme)) {
+		return -ENODEV;
+	}
+	/* Verify one real sample before image confirmation or network waits. */
+	struct dryspool_reading reading;
+	int ret = dryspool_sensors_read(&reading);
+
+	if (ret) {
+		return ret;
+	}
+	LOG_INF("BME280 startup: %.2f C, %.2f %%RH", reading.temperature_c,
+		reading.humidity_pct);
 	return 0;
 }
 
 int dryspool_sensors_read(struct dryspool_reading *reading)
 {
-#if defined(CONFIG_DRYSPOOL_SIMULATED_SENSORS)
 	static unsigned int sample_number;
+	struct sensor_value temperature, humidity;
+	int ret;
 
 	if (reading == NULL) {
 		return -EINVAL;
 	}
-
-	/* Deterministic prototype data makes the wireless demo observable before
-	 * the final sensors are selected. It is not presented as real measurement.
-	 */
-	reading->temperature_c = 23.0 + (sample_number % 5) * 0.1;
-	reading->humidity_pct = 42.0 + (sample_number % 7) * 0.2;
-	reading->filament_remaining_g = 750.0 - (sample_number % 100) * 0.5;
+	ret = sensor_sample_fetch(bme);
+	if (ret) {
+		return ret;
+	}
+	ret = sensor_channel_get(bme, SENSOR_CHAN_AMBIENT_TEMP, &temperature);
+	if (ret) {
+		return ret;
+	}
+	ret = sensor_channel_get(bme, SENSOR_CHAN_HUMIDITY, &humidity);
+	if (ret) {
+		return ret;
+	}
+	reading->temperature_c = sensor_value_to_double(&temperature);
+	reading->humidity_pct = sensor_value_to_double(&humidity);
+	/* Filament and actuator state remain prototype simulations. */
+	reading->filament_remaining_g = 750.0 - (sample_number++ % 100) * 0.5;
 	reading->dehumidifier_on = reading->humidity_pct > 43.0;
-	sample_number++;
 	return 0;
-#else
-	ARG_UNUSED(reading);
-	return -ENOTSUP;
-#endif
 }
