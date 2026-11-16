@@ -6,11 +6,12 @@ PPK output OFF after capture. Existing 3.6 V Source Meter setting unchanged.
 Forced-mode full cpuapp/ns sysbuild completed successfully (exit 0).
 Application flash 734264 B; RAM 394156 B, unchanged from baseline.
 Only firmware source diff: CONFIG_BME280_MODE_FORCED=y plus comment.
-This source edit remains UNCOMMITTED pending flash and successful boot tests.
-verify_forced_boots.py is prepared, not yet executed; preserves older evidence.
+Forced mode flashed and three 30-second boots passed; code commit 1315752.
+Evidence commit 078c5bd: real UART readings 23.54–23.56 C, 29.03–29.10 %RH,
+ID 0x60 at 0x77, responsive shells, same build ID on all boots:
+5493824659416a01c8ff5ecb59e06ae8e24bf00d.
+Logic 2 verifies all 23 BME address frames ACK, and F4=55 forced-mode writes.
 No after capture or measured percentage change yet.
-Blocked on physical DK USB reconnect for flashing/UART; COM6/COM7 still absent
-at latest live check. Operator prompt is pinned as pin-hkmrdfcwqf.
-After UART/Logic boot verification, USB must be disconnected again before
-running capture_power.py after under identical P21 supply conditions.
+Awaiting physical DK USB disconnect for matching P21 after capture;
+operator prompt pin-gymksmukng. PPK output remains off.
 No push. Wi-Fi code, TF-M fix, partition layout and stacks unchanged.
