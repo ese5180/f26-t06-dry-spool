@@ -1,0 +1,19 @@
+BME power preflight — 2026-11-16
+
+No PPK2 output-enable, mode/voltage-change, measurement-start or calibration-write command was sent. Only metadata (0x19) and shell help were requested.
+PPK2 D2099C3C597B responds on COM16 (COM8 is its diagnostic shell).
+Raw metadata: mode=2 (Source Meter), VDD=3600 mV. This is configured voltage, not an independently measured VOUT. Output-enabled state is not included in the metadata. Raw factory coefficients and the reported Calibrated: 0 field are retained exactly; coefficients were not changed and no independent accuracy/calibration verification was performed.
+DK J-Link 1050794921, COM6/COM7 remains USB-connected at this preflight.
+
+Physical wiring and measurement scope remain unconfirmed. Earlier operator setup was source meter 3.6 V, removed P23 VBAT jumper, VOUT to P23 pin 1, common GND, and DK USB disconnected during measurement. The BME is on a regulated 3.3 V supply through an I2C level shifter. The regulator input and both reference-rail power paths were not specified. USB enumeration cannot establish those physical current paths. Do not enable output until confirmed. BME inclusion in measured current is UNKNOWN.
+
+Current baseline firmware is unchanged: BME280 at 0x77, normal driver mode, configured application sample interval 60 s, existing TF-M fix retained. The application reads a startup sample before a later wait. Further reads must be counted from I2C, not assumed from the configured interval. No changes or investigation of Wi-Fi, cloud or OTA are part of this power task.
+
+Paired acquisition plan, subject to confirmed scope:
+- Keep supply, wiring, interval, oversampling, logging and capture conditions identical before/after. Disconnect DK USB for each power capture.
+- Preserve original 32-bit PPK2 ADC packets and coefficient metadata; validate the packet counter and finite/in-range decoding before producing metrics. Preserve native Logic 2/I2C evidence to count completed 0xF7 eight-byte data reads.
+- Use equal, short power-on acquisition windows so the unchanged current firmware can provide its startup sensor reading within each captured window. Actual capture duration and delivered sample count must be reported from the data. Reject an ambiguous/lost-data comparison instead of assuming samples.
+- Average current = sum of decoded current / recorded sample count. Window energy = configured supply voltage times the current integral. Energy per delivered reading = window energy / observed completed readings. This includes all measured-rail startup/background energy; it is not isolated BME conversion energy unless the physical scope isolates it. Autonomous conversions in normal mode are not counted as delivered application readings.
+- After a valid baseline, change only CONFIG_BME280_MODE_FORCED=y. Zephyr then starts conversion on sample_fetch and the BME returns to sleep afterward. Keep all other conditions fixed; verify real readings, I2C communication and stable boot, then repeat the acquisition and compute the measured percentage difference. Do not claim a reduction if the data shows none.
+
+No current/energy values or improvement are available yet. Raw metadata is not a power capture. Waiting for physical power-path confirmation before proceeding.
