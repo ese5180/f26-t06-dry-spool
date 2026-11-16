@@ -1,0 +1,16 @@
+{
+  "variant": "normal-mode comparison image",
+  "extra_conf": "GeneratedFiles/bme-power/normal-mode.conf",
+  "selected_configuration": [
+    "CONFIG_APPLICATION_THREAD_STACK_SIZE=2048",
+    "CONFIG_MAIN_STACK_SIZE=2048",
+    "CONFIG_ISR_STACK_SIZE=2048",
+    "CONFIG_BME280_MODE_NORMAL=y",
+    "CONFIG_BME280_TEMP_OVER_2X=y",
+    "CONFIG_BME280_PRESS_OVER_16X=y",
+    "CONFIG_BME280_HUMIDITY_OVER_16X=y",
+    "CONFIG_BME280_STANDBY_1000MS=y",
+    "CONFIG_BME280_FILTER_4=y"
+  ],
+  "note": "Main prj.conf retains forced mode; the comparison extra configuration overrides mode only. No credentials included."
+}

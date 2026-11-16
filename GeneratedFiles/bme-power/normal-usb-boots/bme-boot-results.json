@@ -1,0 +1,114 @@
+{
+  "observation_seconds_after_reset_command": 30,
+  "boots": [
+    {
+      "boot": 1,
+      "commanded_reset": "RESET_SYSTEM",
+      "observed_seconds": 30.0,
+      "bootloader_starts": 1,
+      "application_starts": 1,
+      "identities": [
+        [
+          "77",
+          "60"
+        ]
+      ],
+      "startup_samples": [
+        [
+          "23.66",
+          "28.25"
+        ]
+      ],
+      "build_ids": [
+        "4078a278fc34aea8d704a05d2d9c171f941589bb"
+      ],
+      "wifi_rdsr2_error": false,
+      "temperature_c": 23.66,
+      "humidity_pct": 28.25,
+      "passed": true,
+      "failures": []
+    },
+    {
+      "boot": 2,
+      "commanded_reset": "RESET_SYSTEM",
+      "observed_seconds": 30.0,
+      "bootloader_starts": 1,
+      "application_starts": 1,
+      "identities": [
+        [
+          "77",
+          "60"
+        ]
+      ],
+      "startup_samples": [
+        [
+          "23.67",
+          "28.36"
+        ]
+      ],
+      "build_ids": [
+        "4078a278fc34aea8d704a05d2d9c171f941589bb"
+      ],
+      "wifi_rdsr2_error": false,
+      "temperature_c": 23.67,
+      "humidity_pct": 28.36,
+      "passed": true,
+      "failures": []
+    },
+    {
+      "boot": 3,
+      "commanded_reset": "RESET_PIN",
+      "observed_seconds": 30.0,
+      "bootloader_starts": 1,
+      "application_starts": 1,
+      "identities": [
+        [
+          "77",
+          "60"
+        ]
+      ],
+      "startup_samples": [
+        [
+          "23.67",
+          "28.28"
+        ]
+      ],
+      "build_ids": [
+        "4078a278fc34aea8d704a05d2d9c171f941589bb"
+      ],
+      "wifi_rdsr2_error": false,
+      "temperature_c": 23.67,
+      "humidity_pct": 28.28,
+      "passed": true,
+      "failures": []
+    }
+  ],
+  "logic": {
+    "device_id": "A98A7A192E89947C",
+    "is_simulation": false,
+    "sda_channel": 0,
+    "scl_channel": 1,
+    "sample_rate_hz": 2000000,
+    "capture_seconds": 8,
+    "captured": true,
+    "ack_verified": true,
+    "sensor_address": "0x77",
+    "acknowledged_address_frames": 22,
+    "chip_id_register": "0xD0",
+    "chip_id_value": "0x60",
+    "verified_chip_id_read_windows": [
+      {
+        "start_seconds": 2.3827995,
+        "stop_seconds": 2.383295
+      },
+      {
+        "start_seconds": 2.654858,
+        "stop_seconds": 2.661075
+      }
+    ],
+    "final_read_byte_master_nack_expected": true,
+    "unused_0x76_probe_nack_expected": true
+  },
+  "all_boots_passed": true,
+  "ppk_controlled": false
+}

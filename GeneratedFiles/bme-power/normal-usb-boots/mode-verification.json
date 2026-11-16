@@ -1,0 +1,13 @@
+{
+  "mode": "normal",
+  "ctrl_meas_writes": [
+    {
+      "time_s": 2.3935605,
+      "register": "0xF4",
+      "value": "0x57",
+      "acked": true
+    }
+  ],
+  "confirmed_all_three_boots": true,
+  "build_id": "4078a278fc34aea8d704a05d2d9c171f941589bb"
+}

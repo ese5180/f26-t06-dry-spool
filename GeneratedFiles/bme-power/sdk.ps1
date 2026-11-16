@@ -10,5 +10,13 @@ foreach($item in $spec.env_vars){
 }
 Set-Location C:\ncs\v3.4.0\dryspool-hapi\firmware
 if($Action -eq 'build') { west build --sysbuild -b nrf7002dk/nrf5340/cpuapp/ns . -d ../build-closed-loop -- '-DEXTRA_CONF_FILE=coap.conf;coap-fota.conf;local.conf' }
+elseif($Action -eq 'build-normal') {
+ west build --sysbuild -b nrf7002dk/nrf5340/cpuapp/ns . -d ../build-closed-loop -- '-DEXTRA_CONF_FILE=coap.conf;coap-fota.conf;local.conf;C:/ncs/v3.4.0/dryspool-hapi/GeneratedFiles/bme-power/normal-mode.conf'
+}
+elseif($Action -eq 'flash-normal') {
+ $cfg=Get-Content ..\build-closed-loop\firmware\zephyr\.config
+ if(-not ($cfg -contains 'CONFIG_BME280_MODE_NORMAL=y') -or ($cfg -contains 'CONFIG_BME280_MODE_FORCED=y')) { throw 'Refusing: build is not normal mode' }
+ west flash --no-rebuild -d ../build-closed-loop --dev-id 1050794921
+}
 elseif($Action -eq 'flash'){ west flash --no-rebuild -d ../build-closed-loop --dev-id 1050794921 }
 exit $LASTEXITCODE
