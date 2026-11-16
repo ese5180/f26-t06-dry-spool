@@ -1,7 +1,7 @@
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/logging/log.h>
-#include "memfault_fota_support.h"
-#include "trial_image.h"
+#include "ota/memfault_update.h"
+#include "ota/trial_image.h"
 
 LOG_MODULE_REGISTER(dryspool_trial, LOG_LEVEL_INF);
 static bool trial;
@@ -17,7 +17,7 @@ void trial_image_init(void)
 void trial_image_check(bool local_health_ok)
 {
 	if (trial && local_health_ok) {
-		memfault_fota_support_init();
+		memfault_confirm_running_image();
 		trial = !boot_is_img_confirmed();
 	}
 }

@@ -40,14 +40,6 @@ void dryspool_queue_fan_request(struct fan_request request, int64_t deadline_ms)
 	k_spin_unlock(&sample_lock, key);
 }
 
-void dryspool_set_fan_request(struct fan_request request)
-{
-	k_spinlock_key_t key = k_spin_lock(&sample_lock);
-	requested = request;
-	deadline = 0;
-	k_spin_unlock(&sample_lock, key);
-}
-
 struct fan_request dryspool_get_fan_request(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&sample_lock);

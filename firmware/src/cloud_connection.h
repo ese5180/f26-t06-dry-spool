@@ -6,6 +6,7 @@
 #ifndef _CLOUD_CONNECTION_H_
 #define _CLOUD_CONNECTION_H_
 #include <net/nrf_cloud.h>
+#include "cloud/cloud_session.h"
 
 /**
  * @brief nRF Cloud device message handler.
@@ -22,15 +23,6 @@ typedef void (*dev_msg_handler_cb_t)(const struct nrf_cloud_data *const dev_msg)
  * @return false if timed out.
  */
 bool await_network_ready(k_timeout_t timeout);
-
-/**
- * @brief Sleep until the nRF Cloud connection is ready for use, or the specified timeout elapses.
- *
- * @param timeout - The time to wait before timing out.
- * @return true if nRF Cloud became ready in time.
- * @return false if timed out.
- */
-bool await_cloud_ready(k_timeout_t timeout);
 
 /**
  * @brief Sleep until connection to nRF Cloud is lost, or the specified timeout elapses.
@@ -67,13 +59,6 @@ bool is_device_deleted(void);
  * @param handler_cb - The callback to handle device messages
  */
 void register_general_dev_msg_handler(dev_msg_handler_cb_t handler_cb);
-
-/**
- * @brief Disconnect from nRF Cloud and update internal state accordingly.
- *
- * May also be called to report an external disconnection.
- */
-void disconnect_cloud(void);
 
 /**
  * @brief Report a communications error so the cloud_connection can evaluate and

@@ -13,15 +13,10 @@ target_sources(app PRIVATE
 )
 
 if(CONFIG_DRYSPOOL_CLOUD)
-  set(legacy_src "${CMAKE_CURRENT_SOURCE_DIR}/../firmware/src")
-  target_link_libraries(app INTERFACE "-Wl,--require-defined=g_memfault_build_id")
-  target_sources(app PRIVATE src/cloud/cloud.c src/cloud/telemetry.c src/cloud/box_shadow.c
-                 "${legacy_src}/memfault_fota_support.c" "${legacy_src}/sample_reboot.c")
-  target_sources_ifdef(CONFIG_SAMPLE_MEMFAULT_FOTA app PRIVATE src/trial_image.c)
-  target_sources_ifdef(CONFIG_SAMPLE_MEMFAULT_BUTTONS app PRIVATE "${legacy_src}/memfault_buttons.c")
+  include(cmake/memfault.cmake)
+  target_sources(app PRIVATE src/cloud/cloud.c src/cloud/telemetry.c src/cloud/box_shadow.c)
+  target_sources_ifdef(CONFIG_SAMPLE_MEMFAULT_FOTA app PRIVATE src/ota/trial_image.c)
   if("${CONFIG_MEMFAULT_NCS_PROJECT_KEY}" STREQUAL "")
     message(WARNING "No Memfault project key configured. For release checks, build with -DEXTRA_CONF_FILE=<absolute path to firmware/local.conf>.")
   endif()
-  target_include_directories(app PRIVATE src "${legacy_src}")
-  zephyr_include_directories(../firmware/config)
 endif()

@@ -1,6 +1,6 @@
 # DrySpool firmware
 
-This is the common Zephyr application for the remainder of the venture project.
+This directory contains the earlier cloud demo application and the Wi-Fi, CoAP and MCUboot configuration used by the [current Wi-Fi box firmware](../mvp_firmware/README.md).
 It targets `nrf7002dk/nrf5340/cpuapp/ns` with nRF Connect SDK 3.4.0 and is based
 on Nordic's current online [`samples/wifi/nrf_cloud`](https://github.com/nrfconnect/sdk-nrf/tree/main/samples/wifi/nrf_cloud)
 sample (audited at upstream commit `b338f2f8548027612c6a94f9379f39d41cf55c37`).

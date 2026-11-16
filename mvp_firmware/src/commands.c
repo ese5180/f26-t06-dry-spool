@@ -48,14 +48,14 @@ static int edit_profile(struct profile *p, size_t argc, char **argv)
 	}
 	if (argc == 4 && !strcmp(argv[1], "spool") &&
 	    *argv[2] && strlen(argv[2]) < sizeof(p->spool) &&
-	    parse_limit(argv[3], 5000, &p->empty_g)) {
+	    parse_limit(argv[3], SCALE_CAPACITY_G, &p->empty_g)) {
 		strcpy(p->spool, argv[2]);
 		return 0;
 	}
 	if (argc == 5 && !strcmp(argv[1], "limits") &&
 	    parse_limit(argv[2], 100, &p->rh_off) &&
 	    parse_limit(argv[3], 100, &p->rh_on) && p->rh_off < p->rh_on &&
-	    parse_limit(argv[4], 5000, &p->low_g)) {
+	    parse_limit(argv[4], SCALE_CAPACITY_G, &p->low_g)) {
 		return 0;
 	}
 	return -EINVAL;

@@ -17,7 +17,6 @@
 - [DrySpool mobile PWA](mobile/README.md) covers phone installation, Vercel deployment and cloud fan control.
 
 - [Wi-Fi box firmware](mvp_firmware/README.md) covers flashing the same signed image to A, B and C, registering each MAC, onboarding each box and testing per-device OTA.
-- [Earlier BLE gateway setup](gateway/README.md) documents the previous A/B/G hardware arrangement.
 
 - [`firmware/README.md`](firmware/README.md): firmware architecture, build,
   memory map, and verified FOTA results.
@@ -381,7 +380,7 @@ Humidity is DrySpool's most important value: it shows whether stored filament
 stays dry. Starting with `0.1.4`, the firmware forwards it, together with
 enclosure temperature and remaining filament, as Memfault heartbeat metrics.
 
-`firmware/config/memfault_metrics_heartbeat_config.def`:
+`mvp_firmware/src/diagnostics/memfault_metrics_heartbeat_config.def`:
 
 ```c
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(dryspool_humidity_pct, kMemfaultMetricType_Unsigned, 10)
@@ -404,7 +403,7 @@ MEMFAULT_METRIC_SET_UNSIGNED(dryspool_dehumidifier_on,
 ```
 
 Values are stored ×10 and scaled back by Memfault (for example, 425 → 42.5 %RH).
-`firmware/CMakeLists.txt` adds `config/` to the include path so the Memfault SDK
+`mvp_firmware/cmake/memfault.cmake` adds `mvp_firmware/src/diagnostics/` to the include path so the Memfault SDK
 finds the definition file.
 
 Timing (firmware `0.1.7`, set in `firmware/coap.conf`):
@@ -506,7 +505,7 @@ dryspool_sensors_read()                         application.c, every 60 s
 **OTA path:** the periodic upload task checks for a release for this device's
 cohort. If one exists, the image is downloaded over HTTPS into external-flash
 slot 1, MCUboot verifies the ECDSA-P256 signature and swaps it in (test mode),
-and `memfault_fota_support_init()` confirms it after the sensor layer starts.
+and `memfault_confirm_running_image()` confirms it after the sensor layer starts.
 If the new image fails before confirmation, MCUboot reverts to the previous one.
 
 **Configuration files:**
@@ -517,7 +516,7 @@ If the new image fails before confirmation, MCUboot reverts to the previous one.
 | `firmware/coap.conf` | CoAP transport and all Memfault settings (intervals, battery, coredump, shell) |
 | `firmware/coap-fota.conf` | FOTA support (`CONFIG_SAMPLE_MEMFAULT_FOTA`) |
 | `firmware/local.conf` | Project key only; git-ignored |
-| `firmware/config/memfault_metrics_heartbeat_config.def` | Custom DrySpool metrics |
+| `mvp_firmware/src/diagnostics/memfault_metrics_heartbeat_config.def` | Custom DrySpool metrics |
 | `firmware/VERSION`, `firmware/Kconfig` | Version (`0.1.7`), used by MCUboot and by Memfault |
 
 ### 6. Extra credit / rollout safety

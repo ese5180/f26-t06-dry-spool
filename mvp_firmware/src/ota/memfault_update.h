@@ -3,16 +3,16 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
-#ifndef MEMFAULT_FOTA_SUPPORT_H
-#define MEMFAULT_FOTA_SUPPORT_H
+#ifndef MEMFAULT_UPDATE_H
+#define MEMFAULT_UPDATE_H
 
 /**
- * @brief Initialize application FOTA support.
+ * @brief Confirm the running MCUboot image.
  *
  * Confirms the running image (if not already confirmed) so that MCUboot does not roll back
- * after a successful FOTA update. Must be called once at startup.
+ * after a successful FOTA update.
  */
-void memfault_fota_support_init(void);
+void memfault_confirm_running_image(void);
 const char *memfault_fota_phase(void);
 
-#endif /* MEMFAULT_FOTA_SUPPORT_H */
+#endif /* MEMFAULT_UPDATE_H */

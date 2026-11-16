@@ -10,14 +10,24 @@ All boxes run this same image and connect directly to Wi-Fi. The [mobile dashboa
 
 The local loop in [main.c](src/main.c) reads the sensors, updates the fan and publishes a sample. Each channel carries its own validity flag, so a scale error leaves humidity control available.
 
-| To change | Files |
+| Feature | Implementation |
 | --- | --- |
-| Sensor access and raw readings | [BME280](src/bme280.c) and [NAU7802](src/nau7802.c) |
+| Temperature and relative humidity | [BME280 sensor](src/bme280.c) |
+| Load cell sampling | [NAU7802 ADC](src/nau7802.c) |
 | Humidity thresholds and fan output | [Fan hysteresis](src/fan.h) and [GPIO driver](src/fan.c) |
 | Tare, calibration and conversion to net grams | [Calibration](src/calibration.c) |
 | Serial commands and saved spool settings | [Shell commands](src/commands.c) and [persistent profile](src/profile.c) |
-| Cloud connection and measurement uploads | [Connection worker](src/cloud/cloud.c) and [telemetry sender](src/cloud/telemetry.c), which reads the [latest sample](src/readings.c) |
-| Trial image confirmation after an update | [Local health check and confirmation](src/trial_image.c) |
+| Wi-Fi link and nRF Cloud session | [Connection and retry loop](src/cloud/cloud.c) |
+| Measurement uploads | [CoAP telemetry sender](src/cloud/telemetry.c) and [latest sensor sample](src/readings.c) |
+| Trial image confirmation after an update | [Local health check and confirmation](src/ota/trial_image.c) |
+| Dashboard fan commands and acknowledgements | [Device shadow](src/cloud/box_shadow.c) |
+| OTA download events and reboot | [Memfault update callback](src/ota/memfault_update.c) and [delayed reboot](src/ota/update_reboot.c) |
+| Memfault heartbeat measurements | [Metric definitions](src/diagnostics/memfault_metrics_heartbeat_config.def) |
+| Optional DK buttons for diagnostics and OTA checks | [Button actions](src/diagnostics/memfault_buttons.c) |
+| Phone dashboard and device discovery | [Box cards and controls](../mobile/app/dashboard.js) and [device inventory and command routing](../mobile/lib/cloud.mjs) |
+| Firmware image storage | [MCUboot primary and download slots](boards/mcuboot-image-slots.dtsi) |
+
+The connected build loads the Wi-Fi, CoAP/DTLS and Memfault HTTPS settings from `firmware/`, then applies `mvp_firmware/prj.conf` and `cloud.conf`. It uses the hardware-derived device ID and the certificate installed on each board. For Memfault release targeting, the box reports software type `dryspool-wifi-box` and hardware version `nrf7002dk-rev1`.
 
 ## Wiring
 
@@ -42,7 +52,7 @@ nrfutil device list
 west flash --no-rebuild -d build-wifi-box --dev-id JLINK_SERIAL
 ```
 
-Repeat the flash command for each board, substituting its J-Link serial number. The same compiled image serves all three. For a board previously running a gateway or BLE image, install the Wi-Fi box baseline by USB first. When moving from the standalone bench firmware, use this wired flash procedure to install MCUboot and the application, then check the calibration and spool ID.
+Repeat the flash command for each board, substituting its J-Link serial number. All boxes use the same compiled image. When installing the Wi-Fi baseline, flash MCUboot and the application over USB, then check the calibration and spool ID.
 
 For sensor bench testing, build the standalone firmware with:
 

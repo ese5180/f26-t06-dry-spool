@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 
 #include "telemetry.h"
-#include "memfault_fota_support.h"
+#include "ota/memfault_update.h"
 
 /* One cloud worker owns the JSON buffer and the unacknowledged command. */
 static char buffer[4097];

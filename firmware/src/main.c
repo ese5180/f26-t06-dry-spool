@@ -14,7 +14,7 @@
 #include "shadow_support_coap.h"
 #endif
 #if defined(CONFIG_SAMPLE_MEMFAULT_BUTTONS)
-#include "memfault_buttons.h"
+#include "diagnostics/memfault_buttons.h"
 #endif
 
 LOG_MODULE_REGISTER(main, CONFIG_WIFI_NRF_CLOUD_LOG_LEVEL);

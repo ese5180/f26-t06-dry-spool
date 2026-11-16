@@ -14,10 +14,10 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 
-#include "cloud_connection.h"
+#include "cloud/cloud_session.h"
 #include "telemetry.h"
 #if defined(CONFIG_SAMPLE_MEMFAULT_BUTTONS)
-#include "memfault_buttons.h"
+#include "diagnostics/memfault_buttons.h"
 #endif
 
 LOG_MODULE_REGISTER(dryspool_cloud, CONFIG_WIFI_NRF_CLOUD_LOG_LEVEL);

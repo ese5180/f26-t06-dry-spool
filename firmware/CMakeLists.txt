@@ -9,9 +9,7 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(dryspool)
 
-# Keep Memfault's Build-ID descriptor in LTO builds. The CLI uses this symbol
-# together with .note.gnu.build-id to match heartbeat data to this exact ELF.
-target_link_libraries(app INTERFACE "-Wl,--require-defined=g_memfault_build_id")
+include(../mvp_firmware/cmake/memfault.cmake)
 
 # Exactly one of mqtt.conf or coap.conf must be selected
 if(NOT CONFIG_NRF_CLOUD_MQTT AND NOT CONFIG_NRF_CLOUD_COAP)
@@ -35,26 +33,16 @@ target_sources(app PRIVATE src/cloud_connection.c)
 target_sources(app PRIVATE src/message_queue.c)
 target_sources(app PRIVATE src/dryspool_sensors.c)
 target_sources(app PRIVATE src/led_control.c)
-target_sources(app PRIVATE src/sample_reboot.c)
 target_sources(app PRIVATE src/shadow_config.c)
 
 if(CONFIG_COAP_SHADOW)
   target_sources(app PRIVATE src/shadow_support_coap.c)
 endif()
 
-if(CONFIG_SAMPLE_MEMFAULT_FOTA)
-  target_sources(app PRIVATE src/memfault_fota_support.c)
-endif()
-
 if(CONFIG_MEMFAULT_METRICS_BATTERY_ENABLE)
   target_sources(app PRIVATE src/dryspool_power.c)
-endif()
-
-if(CONFIG_SAMPLE_MEMFAULT_BUTTONS)
-  target_sources(app PRIVATE src/memfault_buttons.c)
 endif()
 
 # NORDIC SDK APP END
 
 zephyr_include_directories(src)
-zephyr_include_directories(config)

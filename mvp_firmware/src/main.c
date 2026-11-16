@@ -9,7 +9,7 @@
 #include "readings.h"
 #include "scale.h"
 #ifdef CONFIG_SAMPLE_MEMFAULT_FOTA
-#include "trial_image.h"
+#include "ota/trial_image.h"
 #endif
 
 LOG_MODULE_REGISTER(dryspool, LOG_LEVEL_INF);

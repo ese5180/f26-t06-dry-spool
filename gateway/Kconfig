@@ -1,4 +1,0 @@
-mainmenu "DrySpool Bluetooth"
-config DRYSPOOL_NODE
-	bool "Build a sensor box instead of a gateway"
-rsource "../firmware/Kconfig"

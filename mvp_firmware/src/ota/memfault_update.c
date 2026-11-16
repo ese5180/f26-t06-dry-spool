@@ -9,11 +9,11 @@
 #include <memfault/components.h>
 #include <net/fota_download.h>
 
-#include "memfault_fota_support.h"
-#include "cloud_connection.h"
-#include "sample_reboot.h"
+#include "ota/memfault_update.h"
+#include "cloud/cloud_session.h"
+#include "ota/update_reboot.h"
 
-LOG_MODULE_REGISTER(memfault_fota_support, CONFIG_WIFI_NRF_CLOUD_LOG_LEVEL);
+LOG_MODULE_REGISTER(memfault_update, CONFIG_WIFI_NRF_CLOUD_LOG_LEVEL);
 
 enum phase { IDLE, TRANSFERRING, RESTARTING, FAILED };
 static atomic_t phase;
@@ -36,7 +36,7 @@ void memfault_fota_download_callback(const struct fota_download_evt *evt)
 		atomic_set(&phase, RESTARTING);
 		LOG_INF("FOTA update downloaded, rebooting to apply it");
 		disconnect_cloud();
-		sample_reboot_normal();
+		reboot_after_update();
 		break;
 	case FOTA_DOWNLOAD_EVT_ERROR:
 		atomic_set(&phase, FAILED);
@@ -51,7 +51,7 @@ void memfault_fota_download_callback(const struct fota_download_evt *evt)
 	}
 }
 
-void memfault_fota_support_init(void)
+void memfault_confirm_running_image(void)
 {
 	/* Confirm the running image */
 	if (!boot_is_img_confirmed()) {

@@ -3,6 +3,8 @@
 Use this guide to set up a teammate's PC, add another nRF7002 DK, publish a
 firmware release, and run the classroom demo.
 
+For the current Wi-Fi box on `feature/mvp-firmware-sirui`, use the [MVP build, flash and OTA instructions](../mvp_firmware/README.md). Device certificate onboarding below also applies to the MVP. The `dryspool-app` release examples and build paths in this guide belong to the earlier firmware. Publish MVP releases for `dryspool-wifi-box` and select the cohort containing the intended device.
+
 ## 1. Shared project configuration
 
 | Item | Value |

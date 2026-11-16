@@ -13,8 +13,8 @@
 #include <memfault/ports/zephyr/fota.h>
 #endif
 
-#include "memfault_buttons.h"
-#include "cloud_connection.h"
+#include "diagnostics/memfault_buttons.h"
+#include "cloud/cloud_session.h"
 
 LOG_MODULE_REGISTER(memfault_buttons, CONFIG_WIFI_NRF_CLOUD_LOG_LEVEL);
 

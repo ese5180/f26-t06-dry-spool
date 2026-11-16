@@ -4,6 +4,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/settings/settings.h>
 
+#include "calibration.h"
 #include "profile.h"
 
 LOG_MODULE_REGISTER(dryspool_profile, LOG_LEVEL_INF);
@@ -19,9 +20,9 @@ static K_MUTEX_DEFINE(writer_lock);
 static bool valid(const struct profile *p)
 {
 	return p->rh_off >= 0 && p->rh_on <= 100 && p->rh_off < p->rh_on &&
-	       p->empty_g >= -1 && p->empty_g <= 5000 &&
-	       p->low_g >= 0 && p->low_g <= 5000 &&
-	       p->reference_g >= 0 && p->reference_g <= 5000 &&
+	       p->empty_g >= -1 && p->empty_g <= SCALE_CAPACITY_G &&
+	       p->low_g >= 0 && p->low_g <= SCALE_CAPACITY_G &&
+	       p->reference_g >= 0 && p->reference_g <= SCALE_CAPACITY_G &&
 	       memchr(p->spool, '\0', sizeof(p->spool)) != NULL;
 }
 

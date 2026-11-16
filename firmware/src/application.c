@@ -17,7 +17,7 @@
 #include "dryspool_sensors.h"
 #include "message_queue.h"
 #if defined(CONFIG_SAMPLE_MEMFAULT_FOTA)
-#include "memfault_fota_support.h"
+#include "ota/memfault_update.h"
 #endif
 
 LOG_MODULE_REGISTER(application, CONFIG_WIFI_NRF_CLOUD_LOG_LEVEL);
@@ -104,7 +104,7 @@ void main_application_thread_fn(void)
 	 * startup check. If startup fails or crashes first, MCUboot can revert it.
 	 */
 #if defined(CONFIG_SAMPLE_MEMFAULT_FOTA)
-	memfault_fota_support_init();
+	memfault_confirm_running_image();
 #endif
 
 	(void)await_cloud_ready(K_FOREVER);

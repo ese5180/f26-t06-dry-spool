@@ -50,7 +50,7 @@ We added FOTA to our existing DrySpool application:
 | MCUboot support in Zephyr | Enabled through `firmware/Kconfig.sysbuild`. |
 | External flash storage | Application and MCUboot overlays configure the secondary image slot. |
 | Signed firmware with custom keys | `firmware/sysbuild.conf` selects our generated ECDSA-P256 signing key. The private key is excluded from Git. |
-| Wireless FOTA | `firmware/coap-fota.conf` and `firmware/src/memfault_fota_support.c` support Wi-Fi downloads and image confirmation. |
+| Wireless FOTA | `firmware/coap-fota.conf` and `mvp_firmware/src/ota/memfault_update.c` support Wi-Fi downloads and image confirmation. |
 
 ### FOTA test: 0.1.0 → 0.1.1
 
