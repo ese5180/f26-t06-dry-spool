@@ -1,0 +1,50 @@
+*** Booting My Application v2.3.0-dev-c1d2d128a001 ***
+*** Using nRF Connect SDK v3.4.0-99553055607b ***
+*** Using Zephyr OS v4.4.0-bf801e4e3d19 ***
+I: Starting bootloader
+I: LCS-awareness disabled, skipping LCS check
+I: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+I: Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+I: Boot source: none
+I: Image index: 0, Swap type: none
+I: Bootloader chainload address offset: 0x10000
+I: Image version: v0.1.7
+I: Jumping to the first image slot
+uart:~$ *** Booting My Application v0.1.7-f3e82927ade3 ***
+uart:~$ *** Using nRF Connect SDK v3.4.0-99553055607b ***
+uart:~$ *** Using Zephyr OS v4.4.0-bf801e4e3d19 ***
+uart:~$ --- 1 messages dropped ---
+[00:00:00.287,139] <inf> mflt: Periodic background upload scheduled - initial delay=94s period=300s
+uart:~$ --- 1 messages dropped ---
+[00:00:00.287,597] <inf> mflt: Reset Reason, HWINFO=0x0002
+uart:~$ [00:00:00.287,658] <inf> mflt: Reset Cause: Software Reset
+uart:~$ [00:00:00.287,689] <inf> mflt: Reset Cause Stored: 0x0008
+uart:~$ [00:00:00.288,543] <inf> mflt: GNU Build ID: 5493824659416a01c8ff5ecb59e06ae8e24bf00d
+uart:~$ [00:00:00.288,757] <err> memfault_ncs: Failed to provision certificates, error: -17
+uart:~$ [00:00:00.288,970] <wrn> memfault_ncs: Certificates can not be provisioned while LTE is active
+uart:~$ [00:00:00.292,541] <inf> main: DrySpool firmware started, version: 0.1.7, cloud protocol: CoAP
+uart:~$ [00:00:00.293,518] <inf> wifi_supplicant: wpa_supplicant initialized
+uart:~$ [00:00:00.294,219] <inf> cloud_connection: Setting up nRF Cloud library...
+uart:~$ [00:00:00.294,250] <inf> nrf_cloud_info: Device ID: C76180701B209E51
+uart:~$ [00:00:00.294,281] <inf> nrf_cloud_info: Protocol:          CoAP
+uart:~$ [00:00:00.294,311] <inf> nrf_cloud_info: Download protocol: HTTPS
+uart:~$ [00:00:00.294,311] <inf> nrf_cloud_info: Sec tag:           16842753
+uart:~$ [00:00:00.294,311] <inf> nrf_cloud_info: CoAP JWT Sec tag:  16842753
+uart:~$ [00:00:00.294,342] <inf> nrf_cloud_info: Host name:         coap.nrfcloud.com
+uart:~$ [00:00:00.320,281] <inf> nrf_cloud_credentials: Sec Tag: 16842753; CA: Yes, Client Cert: Yes, Private Key: Yes
+uart:~$ [00:00:00.320,312] <inf> nrf_cloud_credentials: CA Size: 1825, AWS: Likely, CoAP: Likely
+uart:~$ [00:00:00.320,678] <inf> dryspool_sensors: BME probe: address 0x77, chip ID 0x60
+uart:~$ [00:00:00.476,135] <inf> dryspool_sensors: BME280 startup: 23.55 C, 29.10 %RH
+uart:~$ [00:00:02.711,822] <inf> net_wifi_mgmt: Connection requested
+uart:~$ [00:00:02.712,280] <inf> cloud_connection: Device Wi-Fi MAC: F4:CE:36:00:8B:E3
+uart:~$ [00:00:02.712,280] <inf> cloud_connection: Enabling connectivity...
+uart:~$ [00:00:05.049,957] <inf> net_wifi_mgmt: Connection requested
+uart:~$ [00:00:05.049,957] <inf> cloud_connection: Waiting for network ready...
+uart:~$ uart:~$ uart:~$ Connection request failed (AP not found/4)
+uart:~$ uart:~$ 
+uart:~$ app version
+0.1.7
+uart:~$ kernel uptime
+Uptime: 21161 ms
+uart:~$ Connection request failed (AP not found/4)
+uart:~$ uart:~$ 
