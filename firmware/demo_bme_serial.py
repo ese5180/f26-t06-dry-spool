@@ -17,6 +17,7 @@ except ImportError:
 
 PROBE = re.compile(r"BME probe: address 0x([0-9a-fA-F]+), chip ID 0x([0-9a-fA-F]+)")
 READING = re.compile(r"BME280 startup: ([-+]?\d+(?:\.\d+)?) C, ([-+]?\d+(?:\.\d+)?) %RH")
+ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 
 
 def main():
@@ -28,6 +29,11 @@ def main():
     if args.timeout <= 0:
         parser.error("--timeout must be positive")
 
+    # Windows terminals may use cp1252; serial noise during reset can decode
+    # to replacement characters that that encoding cannot print.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")
+
     print(f"Opening {args.port} at 115200 baud. Press RESET on the DK now.", flush=True)
     try:
         with serial.Serial(args.port, 115200, timeout=0.5) as uart:
@@ -38,12 +44,13 @@ def main():
                 raw = uart.readline()
                 if not raw:
                     continue
-                line = raw.decode("utf-8", errors="replace").rstrip("\r\n")
-                print(line, flush=True)
+                line = ANSI.sub("", raw.decode("utf-8", errors="replace").rstrip("\r\n"))
                 probe = PROBE.search(line)
+                reading = READING.search(line)
+                if probe or reading:
+                    print(line.strip(), flush=True)
                 if probe:
                     probe_ok = int(probe.group(1), 16) == 0x77 and int(probe.group(2), 16) == 0x60
-                reading = READING.search(line)
                 if reading:
                     reading_ok = True
                 if probe_ok and reading_ok:
