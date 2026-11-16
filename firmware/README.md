@@ -216,8 +216,8 @@ See [the capture](../GeneratedFiles/closed-loop/bme-boot.sal),
 [decoded transactions](../GeneratedFiles/closed-loop/bme-i2c.csv), and
 [boot results](../GeneratedFiles/closed-loop/bme-boot-results.json).
 
-**Separate Wi-Fi issue:** `RDSR2 failed` / RPU initialization failure occurs
-on both unmodified `b4c61b0` and this image. This check does not verify live
+**Separate Wi-Fi issue:** `RDSR2 failed` / RPU initialization failure was
+previously observed on unmodified `b4c61b0` and the normal-mode BME image. This check does not verify live
 cloud reporting or FOTA transport. Their application paths remain unchanged.
 
 **PPK2 baseline (2026-11-16):** Source Meter at the existing 3.6 V setting,
@@ -237,7 +237,7 @@ continuous counters. Output was switched off afterward.
 PPK metadata reports `Calibrated: 0`; factory coefficients were used unchanged,
 and no independent meter calibration or physical supply accuracy check was made.
 
-The single optimization is `CONFIG_BME280_MODE_FORCED=y`: request a
+The single power-related change is `CONFIG_BME280_MODE_FORCED=y`: request a
 conversion at `sensor_sample_fetch()` and sleep afterward. Supply, application
 interval, oversampling and logging stay unchanged. The complete sysbuild flashed
 successfully; three 30-second UART boot checks passed (23.54/23.55/23.56 C;
@@ -245,8 +245,33 @@ successfully; three 30-second UART boot checks passed (23.54/23.55/23.56 C;
 Logic 2 verified ID 0x60 at 0x77, 23 acknowledged address frames, and
 `ctrl_meas` register 0xF4 writes of 0x55 (forced mode), replacing baseline
 0x57 (normal mode). [Optimized boot evidence](../GeneratedFiles/bme-power/forced-usb-boots/bme-boot-results.json).
-Application RAM remains 394156 B; flash is 734264 B. The after measurement
-and percentage change remain **pending** until DK USB is disconnected.
+Application RAM remains 394156 B; flash is 734264 B.
+
+Matching USB-disconnected power-on measurement:
+
+| Measurement | Duration | Average current | Window energy / delivered sample |
+| --- | ---: | ---: | ---: |
+| Normal-mode baseline | 29.99296 s | 48.467715 mA | 5.233285 J / 1 sample |
+| Forced mode | 29.98784 s | 50.147076 mA | 5.413689 J / 1 sample |
+
+**Average current increased 3.4649%**; calculated reduction is **-3.4649%**.
+Window energy increased 3.4472%. This pair does **not** demonstrate a power
+saving or isolate the BME contribution. Each nominal 30-second window
+includes whole-DK startup and background activity, and there is only one
+capture per firmware. The external setup and sampling settings match;
+internal activity and repeatability were not established.
+
+The forced-mode P21 capture contains a real 23.64 C / 29.286133 %RH read,
+ID 0x60 at 0x77, 23/23 address frames ACK, and forced-mode register writes.
+All 2,998,784 PPK packets have continuous counters. Metadata and calibration
+coefficients are byte-identical before/after. PPK output was switched off.
+
+[After raw packets](../GeneratedFiles/bme-power/after/ppk-raw.bin),
+[after I2C capture](../GeneratedFiles/bme-power/after/i2c.sal),
+[after sensor decoding](../GeneratedFiles/bme-power/after/bme.json),
+[comparison](../GeneratedFiles/bme-power/comparison.json), and
+[scope/test notes](../GeneratedFiles/bme-power/after/notes.txt) preserve the evidence.
+Raw binaries are original four-byte PPK packets, not native `.ppk2` files.
 The current network wait allows only the startup delivered sample in the
 measured window; normal mode continues autonomous conversions between reads.
 An idle bus alone cannot prove continued application responsiveness.
@@ -255,6 +280,8 @@ To replay raw current conversion offline (Windows Python, `ppk2-api==0.9.2`):
 
 ```powershell
 python GeneratedFiles/bme-power/replay_power.py GeneratedFiles/bme-power/baseline
+python GeneratedFiles/bme-power/replay_power.py GeneratedFiles/bme-power/after
+python GeneratedFiles/bme-power/compare_power.py
 ```
 
 Short demo procedure:

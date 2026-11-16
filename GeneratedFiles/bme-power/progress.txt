@@ -11,7 +11,14 @@ Evidence commit 078c5bd: real UART readings 23.54–23.56 C, 29.03–29.10 %RH,
 ID 0x60 at 0x77, responsive shells, same build ID on all boots:
 5493824659416a01c8ff5ecb59e06ae8e24bf00d.
 Logic 2 verifies all 23 BME address frames ACK, and F4=55 forced-mode writes.
-No after capture or measured percentage change yet.
-Awaiting physical DK USB disconnect for matching P21 after capture;
-operator prompt pin-gymksmukng. PPK output remains off.
+Matching after capture completed with USB absent, PPK output left off.
+After: 29.98784 s, 50.14707639751728 mA, 5.413689012515489 J.
+2,998,784 samples, no packet counter gaps; offline replay matches exactly.
+PPK metadata/coefficient files byte-identical before/after.
+BME 0x77 ID0x60, 23 address frames ACK, one sample 23.64 C / 29.286133 %RH.
+Average current INCREASED 3.464907%; no measured saving demonstrated.
+Whole-DK startup window per delivered sample; no BME-only attribution or
+repeatability established. Supply, wiring and firmware sample settings held
+constant; internal board/network runtime activity was not controlled.
+See comparison.json and after/notes.txt for measured results and limitations.
 No push. Wi-Fi code, TF-M fix, partition layout and stacks unchanged.
