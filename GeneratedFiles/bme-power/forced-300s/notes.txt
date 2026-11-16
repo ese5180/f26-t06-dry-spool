@@ -1,0 +1,35 @@
+Forced-mode repeat, five-minute nominal power-on window.
+Firmware unchanged from code commit 1315752, previously flashed/verified build
+ID 5493824659416a01c8ff5ecb59e06ae8e24bf00d. Build ID was not re-read during
+this USB-disconnected capture; no intervening flash was performed.
+Live Windows Ports enumeration confirmed DK COM6/COM7 absent; PPK COM8/COM16
+present. Existing Source Meter 3.6 V setting, no voltage/mode writes.
+Same P21 whole DK input path including DK-powered BME, P22/P23 installed,
+direct SDA P1.02 / SCL P1.03, Logic CH0/CH1 with common ground.
+No firmware, sample interval, oversampling, logging, TF-M, stack, partition
+or Wi-Fi changes. Two-second power-off preamble, then nominal 300 s output
+on with raw 100 ksample/s recording and 302 s 2 MHz I2C capture.
+PPK output OFF after acquisition. Metadata/coefficient bytes identical to
+the earlier forced-mode and baseline captures. Raw 4-byte device packets
+split into <=8 MB files, not decimated and not native .ppk2 files.
+The manifest provides raw chunk order, sizes and SHA256 checksums; offline
+streaming replay verified all chunks and 29,999,616 packet counters with
+zero gaps. Actual ADC duration 299.99616 s. Full-window mean 18.086114 mA,
+energy 19.532754 J. Excluding first 30 s: 269.99616 s at 14.830317 mA.
+See current-1s.csv and power.json for temporal variation and minute windows.
+46/46 sensor address frames ACK; ID 0x60 at 0x77; forced-mode F4=55 writes.
+Two real samples: 23.74 C / 28.701172 %RH and 23.73 C / 28.723633 %RH.
+IMPORTANT: two complete sensor initializations (E0=B6 at 2.249513 and
+5.703683 seconds), with sample reads at 2.6623705 and 6.1165395 seconds.
+This suggests a restart or reinitialization; cause is NOT established by
+I2C alone. No UART/reset-cause evidence was captured with USB absent.
+Do not describe this as five minutes of verified stable application operation.
+Two delivered sample bursts are both near startup, not a periodic sampling
+demonstration. Window energy divided by those two reads is 9.766377 J/read,
+which is whole-board startup/background energy, not BME conversion energy.
+No matching 300 s normal-mode measurement yet: do NOT compare this result
+to the earlier 30 s normal-mode average to claim an optimization saving.
+Single-run whole-board variability and stability remain limitations.
+Calibrated:0 retained from metadata, factory coefficients used unchanged;
+no external meter calibration or independent physical voltage check.
+No Wi-Fi diagnosis, source changes or push performed.

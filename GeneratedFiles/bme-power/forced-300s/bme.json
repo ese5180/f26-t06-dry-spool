@@ -1,0 +1,144 @@
+{
+  "chip_id": "0x60",
+  "address": "0x77",
+  "address_frames": 46,
+  "all_address_frames_acked": true,
+  "delivered_samples": [
+    {
+      "time_s": 2.6623705,
+      "raw": [
+        83,
+        130,
+        176,
+        129,
+        27,
+        0,
+        96,
+        176
+      ],
+      "temperature_c": 23.74,
+      "humidity_pct": 28.701171875,
+      "plausible": true
+    },
+    {
+      "time_s": 6.1165395,
+      "raw": [
+        83,
+        130,
+        112,
+        129,
+        26,
+        96,
+        96,
+        180
+      ],
+      "temperature_c": 23.73,
+      "humidity_pct": 28.7236328125,
+      "plausible": true
+    }
+  ],
+  "sample_count": 2,
+  "register_writes": [
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        224,
+        182
+      ],
+      "time": 2.249513
+    },
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        242,
+        5
+      ],
+      "time": 2.2587505
+    },
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        245,
+        168
+      ],
+      "time": 2.259173
+    },
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        244,
+        85
+      ],
+      "time": 2.2595955
+    },
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        244,
+        85
+      ],
+      "time": 2.527123
+    },
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        224,
+        182
+      ],
+      "time": 5.703683
+    },
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        242,
+        5
+      ],
+      "time": 5.712923
+    },
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        245,
+        168
+      ],
+      "time": 5.713346
+    },
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        244,
+        85
+      ],
+      "time": 5.713769
+    },
+    {
+      "read": false,
+      "ack": true,
+      "address": "0x77",
+      "data": [
+        244,
+        85
+      ],
+      "time": 5.9813315
+    }
+  ],
+  "limitation": "I2C proves sensor initialization and completed application sample fetch; no USB UART during P21 measurement, so later application stability is not observable from an idle I2C bus."
+}
