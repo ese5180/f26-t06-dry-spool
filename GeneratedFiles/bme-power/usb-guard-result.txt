@@ -1,0 +1,11 @@
+2026-11-16: Operator confirms P21 polarity, P22/P23 jumpers installed,
+BME powered downstream from DK, no separate supply/shifter. Source 3.6 V authorized.
+Baseline attempt aborted before opening PPK COM16 or issuing output commands:
+pyserial reports COM6/COM7 present. Independent Windows live check:
+Get-PnpDevice -PresentOnly -Class Ports
+Status OK: JLink CDC UART Port (COM7), USB VID1366 PID1061 MI02
+Status OK: JLink CDC UART Port (COM6), USB VID1366 PID1061 MI00
+PPK COM16 and COM8 also present as expected.
+No current samples captured. No power optimization applied.
+capture_power.py is prepared but has not completed a hardware capture;
+its guard worked. Must confirm target USB absent before retrying.
