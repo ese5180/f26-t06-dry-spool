@@ -1,0 +1,16 @@
+Baseline accepted: 29.99296 s, 48.46771509007393 mA, 5.233284863956741 J.
+Whole DK input incl BME; one delivered sample, 23.43 C / 30.54296875 %RH.
+PPK factory 100 ksample/s, 2,999,296 packets, zero counter discontinuities.
+All 22 BME address frames acknowledged, 0x77 ID 0x60.
+PPK output OFF after capture. Existing 3.6 V Source Meter setting unchanged.
+Forced-mode full cpuapp/ns sysbuild completed successfully (exit 0).
+Application flash 734264 B; RAM 394156 B, unchanged from baseline.
+Only firmware source diff: CONFIG_BME280_MODE_FORCED=y plus comment.
+This source edit remains UNCOMMITTED pending flash and successful boot tests.
+verify_forced_boots.py is prepared, not yet executed; preserves older evidence.
+No after capture or measured percentage change yet.
+Blocked on physical DK USB reconnect for flashing/UART; COM6/COM7 still absent
+at latest live check. Operator prompt is pinned as pin-hkmrdfcwqf.
+After UART/Logic boot verification, USB must be disconnected again before
+running capture_power.py after under identical P21 supply conditions.
+No push. Wi-Fi code, TF-M fix, partition layout and stacks unchanged.
