@@ -1,7 +1,21 @@
 &arduino_i2c {
-	env: bme280@76 {
+	status = "disabled";
+};
+
+/* UARTE1 belongs to TF-M. Route TWIM2 to the Arduino SDA/SCL pins. */
+&i2c2 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	env_76: bme280@76 {
 		compatible = "bosch,bme280";
 		reg = <0x76>;
+	};
+	env_77: bme280@77 {
+		compatible = "bosch,bme280";
+		reg = <0x77>;
 	};
 	scale: adc@2a {
 		reg = <0x2a>;

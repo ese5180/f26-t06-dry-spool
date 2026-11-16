@@ -35,7 +35,7 @@ Disconnect power before wiring. The DK uses **1.8 V GPIO** by default. Power the
 
 | DK pins | Connection |
 | --- | --- |
-| D14 / P1.02 (SDA), D15 / P1.03 (SCL) | Connect both the NAU7802 (0x2A) and the BME280 (configured for 0x76) on the sensor side of the level shifter. If your BME280 uses 0x77, change the BME280 node’s unit address to `@77` and its `reg` value to `<0x77>` in the [board overlay](boards/nrf7002dk_nrf5340_cpuapp.overlay), then rebuild. |
+| D14 / P1.02 (SDA), D15 / P1.03 (SCL) | Connect both the NAU7802 (0x2A) and the BME280 on the sensor side of the level shifter. The firmware accepts BME280 address 0x76 or 0x77 and uses 0x76 when both are present. |
 | A0 / P0.04 (digital output) | Connect to the fan driver’s active-high input. Use a driver that accepts 1.8 V logic or add level translation. Pull the input low so the fan stays off during reset. Power the 5 V fan from a separate supply through a suitable motor driver and share ground with the DK. GPIO supplies the control signal only. |
 
 Connect the four-wire 5 kg load cell to the NAU7802’s E+/E− excitation and A+/A− signal terminals. Follow the wire assignments supplied with your load cell. Leave the B channel on newer boards unused. Fix one end of the beam and mount the entire spool holder on the other end. Keep the enclosure walls and cables clear of the holder so they cannot take part of the load. The total load, including the holder, must stay within 5 kg. [Load cell #4541](https://www.adafruit.com/product/4541) · [NAU7802 breakout #4538](https://www.adafruit.com/product/4538) · [Terminal diagram](https://learn.adafruit.com/adafruit-nau7802-24-bit-adc-stemma-qt-qwiic/pinouts)
