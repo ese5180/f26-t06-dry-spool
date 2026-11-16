@@ -14,6 +14,11 @@
 
 ## Team operation links
 
+- [DrySpool mobile PWA](mobile/README.md) covers phone installation, Vercel deployment and cloud fan control.
+
+- [Single Wi-Fi gateway and mobile dashboard](gateway/README.md) covers the
+  three-board setup, BLE fan control, and signed OTA demonstration.
+
 - [`firmware/README.md`](firmware/README.md): firmware architecture, build,
   memory map, and verified FOTA results.
 - [`docs/TEAM_SETUP_AND_DEMO.md`](docs/TEAM_SETUP_AND_DEMO.md): repeatable

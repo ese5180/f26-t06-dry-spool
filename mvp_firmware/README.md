@@ -2,6 +2,10 @@
 
 The nRF7002 DK reads enclosure temperature and humidity from a BME280, estimates remaining filament from a load cell connected to a NAU7802, and controls the circulation fan. With Wi-Fi, it sends readings to nRF Cloud over CoAP/DTLS and downloads signed firmware updates over HTTPS through Memfault Release Management. Weighing, calibration, fan control, and the serial shell also work offline.
 
+## Phone dashboard
+
+For the A/B Bluetooth boxes and Wi-Fi gateway, use the [DrySpool mobile PWA](../mobile/README.md). The gateway build reuses the sensor and fan drivers below.
+
 ## Firmware layout
 
 The local loop in [main.c](src/main.c) reads the sensors, updates the fan and publishes a sample. Each channel carries its own validity flag, so a scale error leaves humidity control available.

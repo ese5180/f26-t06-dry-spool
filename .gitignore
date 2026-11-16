@@ -12,3 +12,4 @@ firmware/dryspool-device.csv
 **/onboard-results.csv
 **/*_prv.pem
 **/*_private_key.pem
+.DS_Store

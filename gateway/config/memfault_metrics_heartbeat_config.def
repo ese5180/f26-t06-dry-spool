@@ -1,0 +1,6 @@
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(box_a_rh, kMemfaultMetricType_Unsigned, 10)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(box_a_temp, kMemfaultMetricType_Signed, 10)
+MEMFAULT_METRICS_KEY_DEFINE(box_a_grams, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(box_b_rh, kMemfaultMetricType_Unsigned, 10)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(box_b_temp, kMemfaultMetricType_Signed, 10)
+MEMFAULT_METRICS_KEY_DEFINE(box_b_grams, kMemfaultMetricType_Unsigned)

@@ -26,3 +26,20 @@ void dryspool_publish_sample(struct dryspool_sample *sample)
 	have_sample = true;
 	k_spin_unlock(&sample_lock, key);
 }
+
+static struct fan_request requested; /* Starts in automatic mode. */
+
+void dryspool_set_fan_request(struct fan_request request)
+{
+	k_spinlock_key_t key = k_spin_lock(&sample_lock);
+	requested = request;
+	k_spin_unlock(&sample_lock, key);
+}
+
+struct fan_request dryspool_get_fan_request(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&sample_lock);
+	struct fan_request request = requested;
+	k_spin_unlock(&sample_lock, key);
+	return request;
+}

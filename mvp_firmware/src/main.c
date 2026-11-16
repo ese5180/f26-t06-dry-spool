@@ -26,11 +26,13 @@ static void update_environment(struct dryspool_sample *sample, const struct prof
 		LOG_WRN("environment=unavailable err=%d", rc);
 	}
 
-	*fan_on = fan_requested_on(*fan_on, sample->env_valid, sample->humidity_mpct,
-				   profile->rh_off, profile->rh_on);
-	sample->fan_valid = (fan_apply(*fan_on) == 0);
+	sample->fan_request = dryspool_get_fan_request();
+	bool target = fan_mode_output(sample->fan_request.mode, *fan_on, sample->env_valid,
+				      sample->humidity_mpct, profile->rh_off, profile->rh_on);
+	sample->fan_valid = (fan_apply(target) == 0);
 	if (sample->fan_valid) {
-		sample->fan_on = *fan_on;
+		*fan_on = target;
+		sample->fan_on = target;
 		LOG_INF("fan_command=%s", *fan_on ? "on" : "off");
 	} else {
 		LOG_ERR("fan_output=unavailable");

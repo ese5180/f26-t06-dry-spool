@@ -6,7 +6,15 @@
 /* One completed pass of the local control loop. Missing data is explicitly
  * marked, so losing one sensor doesn't invalidate the other sensor's data.
  */
+enum fan_mode { FAN_AUTO, FAN_ON, FAN_OFF };
+
+struct fan_request {
+	enum fan_mode mode;
+	int32_t id;
+};
+
 struct dryspool_sample {
+	struct fan_request fan_request;
 	int64_t uptime_ms;
 	int32_t temperature_mc;
 	int32_t humidity_mpct;
@@ -24,3 +32,6 @@ void dryspool_publish_sample(struct dryspool_sample *sample);
 
 /* Copies a consistent snapshot. False before the first pass completes. */
 bool dryspool_read_latest(struct dryspool_sample *out);
+
+void dryspool_set_fan_request(struct fan_request request);
+struct fan_request dryspool_get_fan_request(void);
