@@ -4,7 +4,7 @@ The nRF7002 DK reads enclosure temperature and humidity from a BME280, estimates
 
 ## Phone dashboard
 
-A, B and C each run this same image and connect directly to Wi-Fi. The [mobile dashboard](../mobile/README.md) reads each board’s own cloud shadow for temperature, humidity, filament remaining, fan controls and firmware state. Start with one box and add the others as they are provisioned.
+All boxes run this same image and connect directly to Wi-Fi. The [mobile dashboard](../mobile/README.md) reads each board’s own cloud shadow for temperature, humidity, filament remaining, fan controls and firmware state. Start with one box and add the others as they are provisioned.
 
 ## Firmware layout
 
@@ -68,7 +68,7 @@ Open the application core’s USB virtual serial port at **115200 baud, 8N1**. T
 
 ## Connect to Wi-Fi and nRF Cloud
 
-At 115200 baud, reset each DK and record its `Device Wi-Fi MAC` for network registration and its `nRF Cloud device ID` for the matching dashboard slot. The J-Link serial selects the USB debugger. Each DK has its own TLS credentials. For a new certificate set `--id-str` to the device ID printed by this DK when running the installer. For a previously onboarded DK, check its existing connection first. For a new board, follow step 4 of the team guide to install the board’s credentials through the application UART using `tls_cred_shell` and register the device in the team’s nRF Cloud project. Keep certificates, private keys, Wi-Fi passwords, and release tokens in restricted local storage. [Device onboarding instructions](../docs/TEAM_SETUP_AND_DEMO.md#4-add-a-new-dk-to-nrf-cloud)
+At 115200 baud, reset each DK and record its `Device Wi-Fi MAC` for network registration and its `nRF Cloud device ID` to identify its automatically discovered dashboard card. The J-Link serial selects the USB debugger. Each DK has its own TLS credentials. For a new certificate set `--id-str` to the device ID printed by this DK when running the installer. For a previously onboarded DK, check its existing connection first. For a new board, follow step 4 of the team guide to install the board’s credentials through the application UART using `tls_cred_shell` and register the device in the team’s nRF Cloud project. Keep certificates, private keys, Wi-Fi passwords, and release tokens in restricted local storage. [Device onboarding instructions](../docs/TEAM_SETUP_AND_DEMO.md#4-add-a-new-dk-to-nrf-cloud)
 
 Save a WPA2-Personal network and connect from the application shell:
 

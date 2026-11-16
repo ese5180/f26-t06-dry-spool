@@ -1,6 +1,12 @@
 # DrySpool mobile dashboard
 
-Open the [DrySpool dashboard](https://dryspool-dashboard.vercel.app) on a phone or computer. Boxes A, B and C connect to nRF Cloud over Wi-Fi with their own device certificates. The dashboard reads temperature, relative humidity, remaining filament, fan state and firmware status from each device shadow. Anyone with the dashboard URL can view the readings and control the fan on an online box. Register each board's Wi-Fi MAC address if the campus network requires it.
+Open the [DrySpool dashboard](https://dryspool-dashboard.vercel.app) on a phone or computer. DrySpool boxes connect to nRF Cloud over Wi-Fi with their own device certificates. The dashboard reads temperature, relative humidity, remaining filament, fan state and firmware status from each device shadow. Anyone with the dashboard URL can view the readings and control the fan on an online box. Register each board's Wi-Fi MAC address if the campus network requires it.
+
+## Add a box
+
+Flash the Wi-Fi box firmware, register the device with its own credentials in the same nRF Cloud project and connect it to Wi-Fi. Leave the dashboard open. It lists project devices automatically and adds a card when it recognizes the box software type (`dryspool-wifi-box` or legacy `dryspool-app`) or the box reports its DrySpool fan protocol in the device shadow. The server refreshes the inventory about every 30 seconds and the open dashboard polls readings every five seconds. Adding a box requires no dashboard configuration or redeployment.
+
+New cards show the nRF Cloud nickname if set, or the device serial. Fan commands always target the serial, even when nicknames match or change. A box needs a fresh, valid fan reading to enable its controls. [nRF Cloud device inventory](https://docs.nrfcloud.com/api/list-devices)
 
 ## Run and deploy
 
@@ -9,8 +15,8 @@ Use Node 24 and the pnpm version specified in `package.json`. Copy `.env.example
 | Variable | Value |
 | --- | --- |
 | `NRF_ORG`, `NRF_PROJECT` | Organization and project slugs from the team's nRF Cloud project URL |
-| `NRF_DEVICE_A`, `NRF_DEVICE_B`, `NRF_DEVICE_C` | The nRF Cloud device ID printed at startup by the corresponding box. You can start with one box. Each missing ID affects only its own card. |
-| `DRYSPOOL_OAT` | Server-side nRF Cloud Organization Auth Token for the project, with Device Data → Manage permission to read and update shadows |
+| `NRF_DEVICE_A`, `NRF_DEVICE_B`, `NRF_DEVICE_C` | Optional aliases for existing boxes. A configured ID keeps its Box A, B or C label. Leave unused aliases empty. |
+| `DRYSPOOL_OAT` | Server-side nRF Cloud Organization Auth Token for the project, with permission to list project devices and read and update device shadows |
 | `NEXT_PUBLIC_NRF_CLOUD_RELEASES_URL` | Optional link to the team's OTA releases page, visible to dashboard users |
 | `NEXT_PUBLIC_NRF_CLOUD_METRICS_URL` | Optional link to the team's metrics history. The cloud portal requires its own login. |
 

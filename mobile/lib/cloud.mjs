@@ -1,6 +1,8 @@
 import { randomInt } from 'node:crypto';
 import { ApiError } from './http.mjs';
-import { slots } from './slots.mjs';
+const slots = ['A', 'B', 'C'];
+const knownSoftware = new Set(['dryspool-wifi-box', 'dryspool-app']);
+const validSerial = id => typeof id === 'string' && /^[-a-zA-Z0-9_]{1,128}$/.test(id);
 
 const modes = ['auto', 'on', 'off'];
 const phases = ['checking', 'transferring', 'restarting', 'idle', 'failed'];
@@ -41,22 +43,20 @@ export function deviceId(slot, env = process.env) {
   return id;
 }
 
-export async function state(slot, patch, send = fetch) {
-  const id = deviceId(slot);
+async function cloudRequest(path, patch, send, cache) {
   const { NRF_ORG, NRF_PROJECT, DRYSPOOL_OAT } = process.env;
   if (![NRF_ORG, NRF_PROJECT, DRYSPOOL_OAT].every(Boolean)) {
     throw new ApiError(503, 'Set the nRF Cloud project and server token.');
   }
-  const path = [NRF_ORG, NRF_PROJECT, id].map(encodeURIComponent);
-  const url = 'https://api.nrfcloud.com/v1/organizations/' + path[0] + '/projects/' + path[1] +
-    '/long-range/devices/' + path[2] + '/state';
+  const url = 'https://api.nrfcloud.com/v1/organizations/' + encodeURIComponent(NRF_ORG) +
+    '/projects/' + encodeURIComponent(NRF_PROJECT) + path;
   let res;
   try {
     res = await send(url, {
       method: patch ? 'PATCH' : 'GET', headers: {
         Authorization: 'Bearer ' + DRYSPOOL_OAT, 'Content-Type': 'application/json'
       }, body: patch ? JSON.stringify(patch) : undefined,
-      cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(8000)
+      ...cache, redirect: 'error', signal: AbortSignal.timeout(8000)
     });
     if (res.ok) return patch ? undefined : await res.json();
   } catch {
@@ -65,26 +65,96 @@ export async function state(slot, patch, send = fetch) {
   throw new ApiError(502, `nRF Cloud request failed (HTTP ${res.status}).`);
 }
 
-export function devices(call = state) {
-  return Promise.all(slots.map(async slot => {
-    try {
-      return device(slot, await call(slot));
-    } catch (error) {
-      return { ...device(slot, {}), error: error instanceof ApiError ? error.message : 'Could not read the cloud state.' };
+// Only the project inventory is cached. Readings and command eligibility always use live shadows.
+export async function inventory(send = fetch) {
+  const records = new Map();
+  for (let page = 1; ; page++) {
+    const result = await cloudRequest('/devices?per_page=100&page=' + page, undefined, send,
+      { next: { revalidate: 30 } });
+    const paging = result?.paging;
+    if (!Array.isArray(result?.data) || paging?.page !== page ||
+        !Number.isSafeInteger(paging.page_count) || paging.page_count < 0) {
+      throw new ApiError(502, 'Unexpected device list from nRF Cloud.');
     }
-  }));
+    for (const record of result.data) {
+      if (validSerial(record?.device_serial)) records.set(record.device_serial, record);
+    }
+    if (page >= paging.page_count) return records;
+  }
 }
 
-export async function command(slot, mode, call = state, clock = Date.now) {
-  if (!slots.includes(slot)) throw new ApiError(404, 'Unknown box.');
+function pinnedSlots() {
+  return slots.filter(slot => process.env['NRF_DEVICE_' + slot]?.trim());
+}
+
+export function readShadow(id, patch, send = fetch) {
+  if (!validSerial(id)) throw new ApiError(400, 'Invalid device ID.');
+  return cloudRequest('/long-range/devices/' + encodeURIComponent(id) + '/state', patch, send,
+    { cache: 'no-store' });
+}
+
+export async function fleet(list = inventory, read = readShadow) {
+  let records = new Map();
+  let warning = '';
+  try {
+    records = await list();
+  } catch {
+    warning = 'Device discovery is unavailable. The dashboard will retry.';
+  }
+  const pins = pinnedSlots();
+  const pinnedIds = new Set(pins.map(slot => process.env['NRF_DEVICE_' + slot].trim().toLowerCase()));
+  const cards = pins.map(slot => ({slot, label: 'Box ' + slot,
+    serial: process.env['NRF_DEVICE_' + slot].trim(), pinned: true}));
+  for (const record of records.values()) {
+    if (!pinnedIds.has(record.device_serial.toLowerCase())) {
+      const serial = record.device_serial;
+      cards.push({
+        slot: 'id-' + serial, serial, label: record.nickname?.trim() || 'Box ' + serial,
+        known: knownSoftware.has(record.last_seen_software_version?.software_type?.name)
+      });
+    }
+  }
+  const rows = [];
+  // Limit simultaneous shadow requests as the fleet grows.
+  for (let i = 0; i < cards.length; i += 8) {
+    const batch = await Promise.all(cards.slice(i, i + 8).map(async card => {
+      const {slot, serial, label} = card;
+      let shadow = {}, error;
+      try {
+        shadow = await read(card.pinned ? deviceId(slot) : serial);
+      } catch (e) {
+        error = e instanceof ApiError ? e.message : 'Could not read the cloud state.';
+      }
+      if (!card.pinned && !card.known && shadow?.reported?.dryspool?.fan_api !== 1) return null;
+      return { ...device(slot, shadow), serial, label, error };
+    }));
+    rows.push(...batch.filter(Boolean));
+  }
+  return {rows, warning};
+}
+
+async function commandTarget(slot) {
+  if (slots.includes(slot)) return deviceId(slot);
+  if (!slot.startsWith('id-') || !validSerial(slot.slice(3))) throw new ApiError(404, 'Unknown box.');
+  const id = slot.slice(3);
+  const records = await inventory();
+  if (!records.has(id) || pinnedSlots().some(s =>
+      process.env['NRF_DEVICE_' + s].trim().toLowerCase() === id.toLowerCase())) {
+    throw new ApiError(404, 'Unknown box.');
+  }
+  return id;
+}
+
+export async function command(slot, mode, read = readShadow, clock = Date.now) {
   if (!modes.includes(mode)) throw new ApiError(400, 'Invalid fan mode.');
-  const shadow = await call(slot);
+  const id = await commandTarget(slot);
+  const shadow = await read(id);
   const now = clock();
   const current = device(slot, shadow, now);
   if (!current.control) throw new ApiError(409, 'Wait for a fresh reading and a ready fan before sending a command.');
   if (current.pending) throw new ApiError(409, 'Waiting for the box to confirm the previous command.');
   const request = randomInt(1, 0x7fffffff);
   const expires = Math.floor(now / 1000) + 45;
-  await call(slot, { desired: { config: { fan: { mode, request, expires } } } });
+  await read(id, { desired: { config: { fan: { mode, request, expires } } } });
   return { request, expires };
 }

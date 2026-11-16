@@ -1,6 +1,5 @@
 "use client";
 
-import { slots } from "../lib/slots.mjs";
 import { useEffect, useState } from "react";
 
 const MODES = { on: "On", off: "Off", auto: "Auto" };
@@ -28,7 +27,7 @@ async function api(path, body, signal) {
     error.status = response.status;
     throw error;
   }
-  return payload;
+  return {payload, headers: response.headers};
 }
 
 function Metric({ name, value, unit, large = false }) {
@@ -40,7 +39,8 @@ function Metric({ name, value, unit, large = false }) {
   </div>;
 }
 
-function Box({ slot, data, networkError, now, reload }) {
+function Box({ data, networkError, now, reload }) {
+  const {slot, serial, label} = data;
   const [sending, setSending] = useState(false);
   const [command, setCommand] = useState(null);
   const [error, setError] = useState("");
@@ -64,7 +64,7 @@ function Box({ slot, data, networkError, now, reload }) {
     setCommand(null);
     setError("");
     try {
-      const result = await api("/api/" + slot + "/fan", { mode });
+      const {payload: result} = await api("/api/" + encodeURIComponent(slot) + "/fan", { mode });
       if (!result.request) throw new Error("The cloud did not return a command ID.");
       setCommand({ id: result.request, mode, sent: Date.now() });
     } catch (e) {
@@ -77,9 +77,10 @@ function Box({ slot, data, networkError, now, reload }) {
 
   return <article className="box">
     <div className="boxheading">
-      <h2><span className="letter">{slot}</span>Box {slot}</h2>
+      <h2>{label}</h2>
       <span className={"state" + (connected ? " active" : "")}><i />{state}</span>
     </div>
+    {label !== "Box " + serial && <p className="serial">{serial}</p>}
     <dl className="readings">
       <Metric large name="Filament remaining" value={data?.grams} unit="g" />
       <Metric name="Temperature" value={data?.temperature} unit="°C" />
@@ -87,14 +88,14 @@ function Box({ slot, data, networkError, now, reload }) {
     </dl>
     <div className="controls">
       <div className="controlheading"><h3>Fan mode</h3><span>Fan output · {output}</span></div>
-      <div className="segments" role="group" aria-label={"Box " + slot + " fan controls"}>
+      <div className="segments" role="group" aria-label={label + " fan controls"}>
         {Object.entries(MODES).map(([mode, name]) =>
           <button key={mode} type="button" disabled={!!blocked}
             aria-pressed={data?.mode === mode} onClick={() => control(mode)}>{name}</button>)}
       </div>
       {feedback && <p role="status" className="feedback">{feedback}</p>}
     </div>
-    {(firmware || ota) && <dl className="firmware" aria-label={"Box " + slot + " firmware"}>
+    {(firmware || ota) && <dl className="firmware" aria-label={label + " firmware"}>
       {firmware && <div><dt>Firmware version</dt><dd>{firmware}</dd></div>}
       {ota && <div><dt>Update status</dt><dd>{ota}</dd></div>}
     </dl>}
@@ -131,7 +132,8 @@ function Install() {
 }
 
 export default function Dashboard() {
-  const [devices, setDevices] = useState([]);
+  const [devices, setDevices] = useState(null);
+  const [discoveryWarning, setDiscoveryWarning] = useState("");
   const [error, setError] = useState("");
   const [now, setNow] = useState(0);
   const [refresh, setRefresh] = useState(0);
@@ -147,10 +149,10 @@ export default function Dashboard() {
       request = new AbortController();
       const timeout = setTimeout(() => request.abort(), 18_000);
       try {
-        const value = await api("/api/devices", undefined, request.signal);
+        const {payload: value, headers} = await api("/api/devices", undefined, request.signal);
         if (!active || generation !== run) return;
         if (!Array.isArray(value)) throw new Error("Unexpected device data format.");
-        setDevices(value); setError("");
+        setDevices(value); setDiscoveryWarning(headers.get("X-DrySpool-Discovery") || ""); setError("");
       } catch (e) {
         if (!active || generation !== run) return;
         setError(e.status ? e.message : "Lost connection to the cloud.");
@@ -194,9 +196,13 @@ export default function Dashboard() {
       </nav>
     </div>
     {error && <div className="notice" role="alert">{error}<button onClick={reload}>Retry</button></div>}
-    {devices.length === 0 && !error ? <p role="status">Connecting to the cloud…</p> :
+    {discoveryWarning && !error && <p className="notice" role="status">{discoveryWarning}</p>}
+    {!devices && !error && <p role="status">Connecting to the cloud…</p>}
+    {devices?.length === 0 && !error && !discoveryWarning &&
+      <p role="status">Waiting for the first DrySpool box to report.</p>}
+    {devices?.length > 0 &&
       <section className="grid" aria-label="Filament boxes">
-        {slots.map(slot => <Box key={slot} slot={slot} data={devices.find(d => d.slot === slot)}
+        {devices.map(d => <Box key={d.serial + "/" + d.slot} data={d}
           networkError={!!error} now={now} reload={reload} />)}
       </section>}
   </main>;
