@@ -1,0 +1,12 @@
+*** Booting My Application v2.3.0-dev-c1d2d128a001 ***
+*** Using nRF Connect SDK v3.4.0-99553055607b ***
+*** Using Zephyr OS v4.4.0-bf801e4e3d19 ***
+I: Starting bootloader
+I: LCS-awareness disabled, skipping LCS check
+I: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+I: Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+I: Boot source: none
+I: Image index: 0, Swap type: none
+I: Bootloader chainload address offset: 0x10000
+I: Image version: v0.1.7
+I: Jumping to the first image slot�

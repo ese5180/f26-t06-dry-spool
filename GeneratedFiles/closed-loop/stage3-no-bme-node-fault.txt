@@ -1,0 +1,25 @@
+add symbol table from file "C:/ncs/v3.4.0/dryspool-hapi/build-closed-loop/firmware/tfm/bin/tfm_s.elf"
+arch_system_halt (reason=<optimized out>) at C:/ncs/v3.4.0/zephyr/kernel/fatal.c:30
+30		for (;;) {
+$1 = {valid = 0x1, registers = {r4 = 0x2000c9d8, r5 = 0x20017618, r6 = 0xa93d0, r7 = 0x20036c00, r8 = 0x1, r9 = 0x20011b10, r10 = 0x861f5, r11 = 0x20033900}, frame = {r0 = 0xfffffffe, r1 = 0x1, r2 = 0x40009000, r3 = 0x1980000, r12 = 0x0, lr = 0x6cc3d, pc = 0x6ccec, xpsr = 0x81000000}, status = {msp = 0x20033900, psp = 0x20036be0, exc_return = 0xffffffbd, control = 0x2, cfsr = 0x8200, hfsr = 0x0, sfsr = 0x0, bfar = 0x40009524, mmfar = 0x40009524, sfar = 0xe000ede8, spu_events = 0x0, vectactive = 0x5}}
+i2c_nrfx_twim_init + 244 in section text of C:\ncs\v3.4.0\dryspool-hapi\build-closed-loop\firmware\zephyr\zephyr.elf
+i2c_nrfx_twim_init + 69 in section text of C:\ncs\v3.4.0\dryspool-hapi\build-closed-loop\firmware\zephyr\zephyr.elf
+#0  arch_system_halt (reason=<optimized out>) at C:/ncs/v3.4.0/zephyr/kernel/fatal.c:30
+#1  k_sys_fatal_error_handler (reason=<optimized out>, esf=<optimized out>) at C:/ncs/v3.4.0/zephyr/kernel/fatal.c:44
+#2  z_fatal_error (reason=<optimized out>, esf=<optimized out>) at C:/ncs/v3.4.0/zephyr/kernel/fatal.c:119
+#3  0x0008372a in __wrap_z_fatal_error (reason=536923568, esf=0x20033838 <z_interrupt_stacks+1912>) at C:/ncs/v3.4.0/modules/lib/memfault-firmware-sdk/ports/zephyr/panics/memfault_fault_handler.c:225
+#4  0x00055360 in z_arm_fatal_error (reason=537081912, esf=0x200338bc <z_interrupt_stacks+2044>) at C:/ncs/v3.4.0/zephyr/arch/arm/core/fatal.c:93
+#5  0x0007c5aa in arm_fault (exc_return=<optimized out>, esf=0x200338bc <z_interrupt_stacks+2044>) at C:/ncs/v3.4.0/nrf/modules/trusted-firmware-m/fault.c:283
+#6  tfm_ns_fault_handler_callback () at C:/ncs/v3.4.0/nrf/modules/trusted-firmware-m/fault.c:337
+#7  <signal handler called>
+#8  0x0002ba3e in __gnu_cmse_nonsecure_call ()
+#9  0x00015418 in call_ns_callback (exc_info=exc_info@entry=0x2000075c) at C:/ncs/v3.4.0/nrf/modules/trusted-firmware-m/tfm_boards/common/ns_fault_service.c:138
+#10 0x0001544c in ns_fault_service_call_handler () at C:/ncs/v3.4.0/nrf/modules/trusted-firmware-m/tfm_boards/common/ns_fault_service.c:188
+#11 0x00016288 in tfm_hal_system_halt () at C:/ncs/v3.4.0/nrf/modules/trusted-firmware-m/tfm_boards/common/tfm_hal_reset_halt.c:17
+#12 0x00017662 in tfm_core_panic () at C:/ncs/v3.4.0/modules/tee/tf-m/trusted-firmware-m/secure_fw/spm/core/utilities.c:40
+#13 0x000288f4 in C_BusFault_Handler () at C:/ncs/v3.4.0/modules/tee/tf-m/trusted-firmware-m/platform/ext/common/faults.c:56
+#14 0x0002890e in BusFault_Handler () at C:/ncs/v3.4.0/modules/tee/tf-m/trusted-firmware-m/platform/ext/common/faults.c:71
+Backtrace stopped: previous frame identical to this frame (corrupt stack?)
+0x50003824:	0x8000003a
+[Inferior 1 (Remote target) detached]
+

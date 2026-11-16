@@ -1,0 +1,79 @@
+Early initialization diagnosis and BME verification — 2026-11-16
+
+Constraints observed: no recover/full-chip erase, no PPK2 setting changes,
+no new commits or pushes during diagnosis; fixed TF-M/storage layout unchanged.
+
+1. b4c61b0 firmware source restored exactly, built and flashed with existing
+   ignored local credentials/signing key. Two boots reached application and
+   app version returned 0.1.7. Wi-Fi QSPI RDSR2 initialization error exists in
+   this baseline; cloud operation is not verified by this test.
+   Static application RAM: 393900 / 409600 bytes.
+   Baseline stack free: app 1776/2048, IRQ 1816/2048; main/init stack fill
+   estimate 736/2048 after excluding its 64-byte guard.
+
+2. Candidate with BME node, RESET_ON_FATAL_ERROR=n, FAULT_DUMP=2 and
+   MEMFAULT_FAULT_HANDLER_RETURN=y: stopped after MCUboot handoff, no UART
+   fault output. GDB captured saved context and a hardware breakpoint was
+   placed on the failing instruction on the next reset:
+   original PC 0x0006cde0, LR 0x0006cd31, CFSR 0x00008200,
+   BFAR 0x40009524, exception vector 5 (BusFault), SFSR=0.
+   Failing instruction: store to TWIM1 FREQUENCY in nrf_twim_frequency_set.
+   Live backtrace:
+     nrf_twim_frequency_set -> nrfy_twim_periph_configure -> twim_configure
+     -> nrfx_twim_init -> i2c_nrfx_twim_common_init -> i2c_nrfx_twim_init
+     -> do_device_init -> z_sys_init_run_level(POST_KERNEL) -> bg_thread_main
+   BME280 initialization and the application thread have not run yet.
+   At fault: PSP=0x20036c40, PSPLIM=0x200364c0, margin 1920 bytes.
+   Application static RAM 394156 / 409600, margin 15444 bytes.
+   SPU PERIPHID[9].PERM at 0x50003824 reads 0x8000003a (secure attribute set).
+   CONFIG_TFM_SECURE_UART=y, CONFIG_TFM_SECURE_UART1=y and
+   CONFIG_NRF_UARTE1_SECURE=y reserve the shared UARTE1/TWIM1 block.
+   SDK target_cfg_53_91.c deliberately keeps that block secure for UART1.
+   See stage2-fault-context.txt for captured context and live init backtrace.
+
+3. I2C/SENSOR with no BME node and original simulated backend:
+   CONFIG_BME280=y is requested but Kconfig resolves it to n because
+   DT_HAS_BOSCH_BME280_ENABLED=n. Build succeeds with that warning.
+   Flashed image halts before application startup with the same precise
+   bus fault: PC 0x6ccec in i2c_nrfx_twim_init, LR 0x6cc3d,
+   CFSR=0x8200, BFAR=0x40009524, SPU permission still 0x8000003a.
+   Static RAM 394092 / 409600 bytes.
+   This demonstrates that the BME instance is not required to trigger it.
+
+4. BME node under arduino_i2c, original simulated backend and same
+   diagnostics: reproduces the same fault before BME initialization.
+   PC=0x6cc68, LR=0x6cbb9, CFSR=0x8200, BFAR=0x40009524,
+   SPU PERIPHID[9].PERM=0x8000003a. RAM=394156 / 409600 bytes.
+   arduino_i2c and i2c1 name the same controller, so changing aliases alone
+   does not release the peripheral from the secure UART reservation.
+
+5. Fix built and flashed, real BME backend restored and temporary
+   diagnostic fatal-reset override removed. Fix applied: CONFIG_TFM_SECURE_UART=n and CONFIG_TFM_LOG_LEVEL_SILENCE=y to release
+serial block 1 to non-secure I2C. Application UART0 remains in use.
+No partition, storage, SRAM split, or heap/stack size change is proposed.
+
+Build note: disabling only TFM_SECURE_UART leaves the SDK stdout object
+referencing Driver_USART1. TFM_LOG_LEVEL_SILENCE also disables the default
+secure UART stdout implementation. The paired settings linked TF-M
+successfully at 113456 bytes flash, still inside the original secure slot.
+Application linked/signed: 734232 bytes flash, 394156 bytes static RAM.
+Flashed image reaches the application and answers app version=0.1.7.
+Early TWIM1 initialization fault is no longer observed on this boot.
+UART probe reads address 0x77, chip ID 0x60 (BME280), rather than expected
+0x76. Guard rejects this mismatch with -ENODEV; no environmental sample is
+accepted. Hardware operations stopped immediately pending user direction
+on 0x77 versus checking SDO wiring. No additional reset or Logic capture
+performed after detection. Repeated-boot consistency remains unverified.
+Baseline Wi-Fi QSPI RDSR2 startup failure is still present after the fix.
+No PPK2 settings changed, no measurements, no new commits or pushes.
+See stage5-fixed-uart.txt for raw startup/probe/version/stack output.
+
+6. Operator approved detected 0x77. Updated bme280@77/reg=0x77 and
+   identity guard. Complete cpuapp/ns sysbuild and flash succeeded.
+   Three consecutive commanded startups passed, each observed 30 seconds
+   with exactly one startup and no spontaneous reset. Samples:
+   24.28 C / 30.77 %RH; 24.28 C / 30.98 %RH; 24.31 C / 31.10 %RH.
+   Real Logic 2 capture verifies 36 ACKed address frames at 0x77 and the
+   acknowledged D0 selection / repeated-start ID read returning 60.
+   Boot consistency and BME communication are verified within those windows.
+   Wi-Fi RDSR2 remains separate. PPK measurement and push remain held.

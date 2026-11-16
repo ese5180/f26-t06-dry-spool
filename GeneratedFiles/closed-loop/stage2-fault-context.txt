@@ -1,0 +1,68 @@
+add symbol table from file "C:/ncs/v3.4.0/dryspool-hapi/GeneratedFiles/closed-loop/scratch/stage2-tfm.elf"
+arch_system_halt (reason=<optimized out>) at C:/ncs/v3.4.0/zephyr/kernel/fatal.c:30
+30		for (;;) {
+$1 = {valid = 0x1, registers = {r4 = 0x2000c150, r5 = 0x20015f78, r6 = 0xa9a24, r7 = 0x20036c40, r8 = 0x1, r9 = 0x20011b10, r10 = 0x8663d, r11 = 0x20033940}, frame = {r0 = 0xfffffffe, r1 = 0x1, r2 = 0x40009000, r3 = 0x1980000, r12 = 0x0, lr = 0x6cd31, pc = 0x6cde0, xpsr = 0x81000000}, status = {msp = 0x20033940, psp = 0x20036c20, exc_return = 0xffffffbd, control = 0x2, cfsr = 0x8200, hfsr = 0x0, sfsr = 0x0, bfar = 0x40009524, mmfar = 0x40009524, sfar = 0xe000ede8, spu_events = 0x0, vectactive = 0x5}}
+i2c_nrfx_twim_init.lto_priv + 244 in section text of C:\ncs\v3.4.0\dryspool-hapi\GeneratedFiles\closed-loop\scratch\stage2.elf
+i2c_nrfx_twim_init.lto_priv + 69 in section text of C:\ncs\v3.4.0\dryspool-hapi\GeneratedFiles\closed-loop\scratch\stage2.elf
+   0x6cdd8 <i2c_nrfx_twim_init+236>:	str.w	r0, [r2, #1288]	@ 0x508
+   0x6cddc <i2c_nrfx_twim_init+240>:	str.w	r1, [r2, #1292]	@ 0x50c
+   0x6cde0 <i2c_nrfx_twim_init+244>:	str.w	r3, [r2, #1316]	@ 0x524
+   0x6cde4 <i2c_nrfx_twim_init+248>:	ldr	r3, [r5, #4]
+   0x6cde6 <i2c_nrfx_twim_init+250>:	cbz	r3, 0x6cdf2 <i2c_nrfx_twim_init+262>
+   0x6cde8 <i2c_nrfx_twim_init+252>:	ldr	r0, [r5, #0]
+   0x6cdea <i2c_nrfx_twim_init+254>:	sbfx	r0, r0, #12, #8
+   0x6cdee <i2c_nrfx_twim_init+258>:	bl	0x5408c <__NVIC_EnableIRQ>
+arm-zephyr-eabi-gdb.exe : Resetting target
+At line:1 char:1
++ & C:\ncs\toolchains\dcbdc366a1\opt\zephyr-sdk\gnu\arm-zephyr-eabi\bin ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Resetting target:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+Hardware assisted breakpoint 1 at 0x6cde0: file C:/ncs/v3.4.0/modules/hal/nordic/nrfx/hal/nrf_twim.h, line 989.
+
+Breakpoint 1, nrf_twim_frequency_set (p_reg=0x40009000, frequency=NRF_TWIM_FREQ_100K) at C:/ncs/v3.4.0/modules/hal/nordic/nrfx/hal/nrf_twim.h:989
+989	    p_reg->FREQUENCY = frequency;
+r0             0xfffffffe          4294967294
+r1             0x1                 1
+r2             0x40009000          1073778688
+r3             0x1980000           26738688
+r4             0x2000c150          536920400
+r5             0x20015f78          536960888
+r6             0xa9a24             694820
+r7             0x20036c40          537095232
+r8             0x1                 1
+r9             0x20011b10          536943376
+r10            0x8663d             550461
+r11            0x20033940          537082176
+r12            0x0                 0
+sp             0x20036c40          0x20036c40 <z_main_stack+1984>
+lr             0x6cd31             445745
+pc             0x6cde0             0x6cde0 <i2c_nrfx_twim_init+244>
+xpsr           0x81000000          -2130706432
+psp            0x20036c40          0x20036c40 <z_main_stack+1984>
+msp            0x20033940          0x20033940 <supplicant_thread_stack>
+psplim         0x200364c0          537093312
+msplim         0x20033100          537080064
+#0  nrf_twim_frequency_set (p_reg=0x40009000, frequency=NRF_TWIM_FREQ_100K) at C:/ncs/v3.4.0/modules/hal/nordic/nrfx/hal/nrf_twim.h:989
+#1  nrfy_twim_periph_configure (p_reg=0x40009000, p_config=<synthetic pointer>) at C:/ncs/v3.4.0/modules/hal/nordic/nrfx/haly/nrfy_twim.h:118
+#2  twim_configure (p_instance=0x20015f78 <twim_0_data.lto_priv>, p_config=0x2000c150 <twim_0z_config.lto_priv>) at C:/ncs/v3.4.0/modules/hal/nordic/nrfx/drivers/src/nrfx_twim.c:173
+#3  nrfx_twim_init (p_instance=0x20015f78 <twim_0_data.lto_priv>, p_config=0x2000c150 <twim_0z_config.lto_priv>, event_handler=<optimized out>, p_context=0xa9a24 <__device_dts_ord_140>) at C:/ncs/v3.4.0/modules/hal/nordic/nrfx/drivers/src/nrfx_twim.c:290
+#4  i2c_nrfx_twim_common_init (dev=0xa9a24 <__device_dts_ord_140>) at C:/ncs/v3.4.0/zephyr/drivers/i2c/i2c_nrfx_twim_common.c:135
+#5  i2c_nrfx_twim_init (dev=0xa9a24 <__device_dts_ord_140>) at C:/ncs/v3.4.0/zephyr/drivers/i2c/i2c_nrfx_twim.c:254
+#6  0x00083f36 in do_device_init (dev=0xa9a24 <__device_dts_ord_140>) at C:/ncs/v3.4.0/zephyr/kernel/device.c:23
+#7  0x00083f82 in z_sys_init_run_level (level=level@entry=INIT_LEVEL_POST_KERNEL) at C:/ncs/v3.4.0/zephyr/kernel/init.c:243
+#8  0x0008664c in bg_thread_main (unused1=<optimized out>, unused2=<optimized out>, unused3=<optimized out>) at C:/ncs/v3.4.0/zephyr/kernel/init.c:302
+#9  0x000343f2 in z_thread_entry (entry=0x8663d <bg_thread_main>, p1=0x0, p2=<optimized out>, p3=<optimized out>) at C:/ncs/v3.4.0/zephyr/lib/os/thread_entry.c:60
+   0x6cdd8 <i2c_nrfx_twim_init+236>:	str.w	r0, [r2, #1288]	@ 0x508
+   0x6cddc <i2c_nrfx_twim_init+240>:	str.w	r1, [r2, #1292]	@ 0x50c
+=> 0x6cde0 <i2c_nrfx_twim_init+244>:	str.w	r3, [r2, #1316]	@ 0x524
+   0x6cde4 <i2c_nrfx_twim_init+248>:	ldr	r3, [r5, #4]
+   0x6cde6 <i2c_nrfx_twim_init+250>:	cbz	r3, 0x6cdf2 <i2c_nrfx_twim_init+262>
+   0x6cde8 <i2c_nrfx_twim_init+252>:	ldr	r0, [r5, #0]
+   0x6cdea <i2c_nrfx_twim_init+254>:	sbfx	r0, r0, #12, #8
+   0x6cdee <i2c_nrfx_twim_init+258>:	bl	0x5408c <__NVIC_EnableIRQ>
+   0x6cdf2 <i2c_nrfx_twim_init+262>:	movs	r3, #1
+   0x6cdf4 <i2c_nrfx_twim_init+264>:	mov	r0, r6
+[Inferior 1 (Remote target) detached]

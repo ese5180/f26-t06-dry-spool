@@ -1,11 +1,15 @@
-Closed-loop demo status — 2026-11-16
-Branch: closed-loop-bme-power, based on origin/main b4c61b0.
-Reachable: J-Link 1050794921, application UART COM7; PPK2 D2099C3C597B on COM16/COM8; real Saleae Logic 8 A98A7A192E89947C via Logic 2 port 10430.
-Candidate firmware uses Zephyr BME280 driver, i2c1 at configured 0x76, SDA P1.02 and SCL P1.03 (board pinctrl confirmed). Physical sensor identity/address/wiring NOT verified.
-Team signing public-key hash matched the documented hash. Ignored local signing key and Memfault project setting restored privately from sibling worktree; secrets remain uncommitted.
-Full NCS 3.4.0 sysbuild and flash succeeded. Application: flash 734232 B; RAM 394156 B. MCUboot: flash 39308 B.
-UART after flash repeatedly shows MCUboot version 0.1.7 handoff, then another boot. No application startup or BME probe/sample log. See boot-failure-uart.txt. Board currently resets repeatedly; recovery/debugging remains required.
-Logic 2: 8 s, CH0 SDA, CH1 SCL, 2 MHz; analyzer export contains only a header, no decoded I2C transactions. Address and ACK NOT verified. The small failed capture is retained as bme-boot.sal.
-Debugger reports VTref=3.300 V; user describes DK-side level-shifter reference as 1.8 V. These may be different rails; stop pending clarification before further hardware operations.
-PPK2 metadata read succeeds. No output/mode/voltage changes made; no power measurement performed. Average current before/after and percentage change are unavailable.
-No power optimization applied yet; baseline candidate uses normal BME280 mode and unchanged 60 s telemetry interval. Wi-Fi/cloud/Memfault/MCUboot/FOTA source paths were not altered, but runtime preservation cannot be claimed until boot is restored.
+BME280 / boot verification — 2026-11-16
+Branch: closed-loop-bme-power; main unchanged. Push and PPK measurements held.
+Complete NCS 3.4.0 cpuapp/ns sysbuild and verified flash of MCUboot plus signed application succeeded.
+TF-M UART1/stdout reservation disabled; serial block 1 available to TWIM1.
+Partition layout and stack allocations retained from b4c61b0.
+BME280 at detected/approved 0x77, chip ID 0x60. SDA P1.02/D14, SCL P1.03/D15.
+Three consecutive commanded startups passed 30-second observation windows without spontaneous resets. Each had one bootloader/application start, matching build IDs, real sensor sample and live UART version response:
+  Boot 1 (software reset): 24.28 C, 30.77 %RH; 30.016 s.
+  Boot 2 (software reset): 24.28 C, 30.98 %RH; 30.016 s.
+  Boot 3 (pin reset):      24.31 C, 31.10 %RH; 30.000 s.
+Logic 2: real Logic 8 A98A7A192E89947C, CH0 SDA / CH1 SCL, sensor side, 2 MHz, 8 s. 36/36 address frames to 0x77 ACKed. Register 0xD0 write ACKed, repeated-start read returns 0x60. Final master NACK and unused 0x76 probe NACK are expected.
+Application flash 734232 B, static RAM 394156/409600 B. Main/app/ISR stacks remain 2048 B each. Firmware 0.1.7, build ID 67839ffc52fc7553478e1610a98e002ad00cbc6b.
+Separate unresolved Wi-Fi issue: RDSR2/RPU initialization failure appears on baseline b4c61b0 and all three current boots. Live cloud and FOTA transport were not verified by these tests.
+No PPK measurements or PPK setting changes; no power savings claimed. No push.
+Raw evidence: bme-boot-{1,2,3}-uart.txt, bme-i2c.csv, bme-boot.sal, bme-boot-results.json, bme-77-flash.txt. Earlier fault analysis: diagnosis.txt and stage2-fault-context.txt.

@@ -1,0 +1,77 @@
+add symbol table from file "C:/ncs/v3.4.0/dryspool-hapi/GeneratedFiles/closed-loop/scratch/stage2-tfm.elf"
+arch_system_halt (reason=<optimized out>) at C:/ncs/v3.4.0/zephyr/kernel/fatal.c:30
+30		for (;;) {
+r0             0x1                 1
+r1             0x0                 0
+r2             0x20014940          536955200
+r3             0x20                32
+r4             0x20033878          537081976
+r5             0x2000cdb8          536923576
+r6             0x20014940          536955200
+r7             0x20033878          537081976
+r8             0x20033878          537081976
+r9             0x200338b8          537082040
+r10            0x5                 5
+r11            0x7c8b4             510132
+r12            0x200337b0          537081776
+sp             0x20033878          0x20033878 <z_interrupt_stacks+1912>
+lr             0x95db7             613815
+pc             0x85efa             0x85efa <z_fatal_error+218>
+xpsr           0x1000001           16777217
+fpscr          0x0                 0
+msp            0x20033878          0x20033878 <z_interrupt_stacks+1912>
+psp            0x20036c20          0x20036c20 <z_main_stack+1952>
+msp_ns         0x20033878          0x20033878 <z_interrupt_stacks+1912>
+psp_ns         0x20036c20          0x20036c20 <z_main_stack+1952>
+msp_s          0x20000690          0x20000690
+psp_s          0x2000a268          0x2000a268 <ns_agent_tz_stack+1000>
+primask        0x0                 0
+basepri        0x20                32
+faultmask      0x0                 0
+control        0x2                 2
+apsr           0x0                 0
+epsr           0x1000000           16777216
+ipsr           0x1                 1
+iapsr          0x1                 1
+eapsr          0x1000000           16777216
+iepsr          0x1000001           16777217
+msplim         0x20033100          537080064
+psplim         0x200364c0          537093312
+msplim_s       0x20000000          536870912
+msplim_ns      0x20033100          537080064
+psplim_s       0x20009e80          536911488
+psplim_ns      0x200364c0          537093312
+#0  arch_system_halt (reason=<optimized out>) at C:/ncs/v3.4.0/zephyr/kernel/fatal.c:30
+#1  k_sys_fatal_error_handler (reason=<optimized out>, esf=<optimized out>) at C:/ncs/v3.4.0/zephyr/kernel/fatal.c:44
+#2  z_fatal_error (reason=<optimized out>, esf=<optimized out>) at C:/ncs/v3.4.0/zephyr/kernel/fatal.c:119
+#3  0x00083b72 in __wrap_z_fatal_error (reason=536923576, esf=0x20033878 <z_interrupt_stacks+1912>) at C:/ncs/v3.4.0/modules/lib/memfault-firmware-sdk/ports/zephyr/panics/memfault_fault_handler.c:225
+#4  0x000554d8 in z_arm_fatal_error (reason=537081976, esf=0x200338fc <z_interrupt_stacks+2044>) at C:/ncs/v3.4.0/zephyr/arch/arm/core/fatal.c:93
+#5  0x0007c9f2 in arm_fault (exc_return=<optimized out>, esf=0x200338fc <z_interrupt_stacks+2044>) at C:/ncs/v3.4.0/nrf/modules/trusted-firmware-m/fault.c:283
+#6  tfm_ns_fault_handler_callback () at C:/ncs/v3.4.0/nrf/modules/trusted-firmware-m/fault.c:337
+#7  <signal handler called>
+#8  0x0002ba3e in __gnu_cmse_nonsecure_call ()
+#9  0x00015418 in call_ns_callback (exc_info=exc_info@entry=0x2000075c) at C:/ncs/v3.4.0/nrf/modules/trusted-firmware-m/tfm_boards/common/ns_fault_service.c:138
+#10 0x0001544c in ns_fault_service_call_handler () at C:/ncs/v3.4.0/nrf/modules/trusted-firmware-m/tfm_boards/common/ns_fault_service.c:188
+#11 0x00016288 in tfm_hal_system_halt () at C:/ncs/v3.4.0/nrf/modules/trusted-firmware-m/tfm_boards/common/tfm_hal_reset_halt.c:17
+#12 0x00017662 in tfm_core_panic () at C:/ncs/v3.4.0/modules/tee/tf-m/trusted-firmware-m/secure_fw/spm/core/utilities.c:40
+#13 0x000288f4 in C_BusFault_Handler () at C:/ncs/v3.4.0/modules/tee/tf-m/trusted-firmware-m/platform/ext/common/faults.c:56
+#14 0x0002890e in BusFault_Handler () at C:/ncs/v3.4.0/modules/tee/tf-m/trusted-firmware-m/platform/ext/common/faults.c:71
+Backtrace stopped: previous frame identical to this frame (corrupt stack?)
+0xe000ed28:	0x00000000	0x00000000	0x00000001	0x00000000
+0xe000ede4:	0x00000000	0x00000000
+0xe002ed28:	0x00000000	0x00000000	0x00000000	0x00000000
+   0x85eee <z_fatal_error+206>:	strh	r1, [r2, #24]
+   0x85ef0 <z_fatal_error+208>:	movs	r3, #32
+   0x85ef2 <z_fatal_error+210>:	msr	BASEPRI_MAX, r3
+   0x85ef6 <z_fatal_error+214>:	isb	sy
+=> 0x85efa <z_fatal_error+218>:	b.n	0x85efa <z_fatal_error+218>
+   0x85efc <z_fatal_error+220>:	ldr	r3, [pc, #52]	@ (0x85f34 <z_fatal_error+276>)
+   0x85efe <z_fatal_error+222>:	b.n	0x85eaa <z_fatal_error+138>
+   0x85f00 <z_fatal_error+224>:	cmp	r1, #0
+   0x85f02 <z_fatal_error+226>:	bne.n	0x85e80 <z_fatal_error+96>
+   0x85f04 <z_fatal_error+228>:	b.n	0x85ed2 <z_fatal_error+178>
+   0x85f06 <z_fatal_error+230>:	nop
+   0x85f08 <z_fatal_error+232>:	ldmia	r5, {r3, r4, r5, r7}
+z_fatal_error + 218 in section text of C:\ncs\v3.4.0\dryspool-hapi\GeneratedFiles\closed-loop\scratch\stage2.elf
+z_log_msg_finalize.constprop + 115 in section text of C:\ncs\v3.4.0\dryspool-hapi\GeneratedFiles\closed-loop\scratch\stage2.elf
+[Inferior 1 (Remote target) detached]

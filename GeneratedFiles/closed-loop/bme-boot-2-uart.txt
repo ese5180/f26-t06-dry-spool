@@ -1,0 +1,51 @@
+*** Booting My Application v2.3.0-dev-c1d2d128a001 ***
+*** Using nRF Connect SDK v3.4.0-99553055607b ***
+*** Using Zephyr OS v4.4.0-bf801e4e3d19 ***
+I: Starting bootloader
+I: LCS-awareness disabled, skipping LCS check
+I: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+I: Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+I: Boot source: none
+I: Image index: 0, Swap type: none
+I: Bootloader chainload address offset: 0x10000
+I: Image version: v0.1.7
+I: Jumping to the first image slot�
+uart:~$ [00:00:00.060,272] <err> wifi_nrf_bus: Error: RDSR2 failed
+uart:~$ [00:00:00.060,333] <err> wifi_nrf: zep_shim_bus_qspi_dev_add: RPU enable failed with error -1
+uart:~$ [00:00:00.060,394] <err> wifi_nrf: nrf_wifi_bus_qspi_dev_add: nrf_wifi_osal_bus_qspi_dev_add failed
+uart:~$ [00:00:00.060,485] <err> wifi_nrf: nrf_wifi_bal_dev_add: Bus dev_add failed
+uart:~$ [00:00:00.060,546] <err> wifi_nrf: nrf_wifi_sys_hal_dev_add: nrf_wifi_bal_dev_add failed
+uart:~$ [00:00:00.060,729] <err> wifi_nrf: nrf_wifi_sys_fmac_dev_add: nrf_wifi_sys_hal_dev_add failed
+uart:~$ [00:00:00.060,760] <err> wifi_nrf: nrf_wifi_fmac_dev_add_zep: nrf_wifi_fmac_dev_add failed
+uart:~$ [00:00:00.060,791] <err> wifi_nrf: nrf_wifi_if_start_zep: nrf_wifi_fmac_dev_add_zep failed
+uart:~$ *** Booting My Application v0.1.7-d3e90e91b74f ***
+uart:~$ *** Using nRF Connect SDK v3.4.0-99553055607b ***
+uart:~$ *** Using Zephyr OS v4.4.0-bf801e4e3d19 ***
+uart:~$ [00:00:00.064,270] <inf> mflt: Periodic background upload scheduled - initial delay=336s period=300s
+uart:~$ [00:00:00.064,758] <inf> mflt: Reset Reason, HWINFO=0x0002
+uart:~$ [00:00:00.064,788] <inf> mflt: Reset Cause: Software Reset
+uart:~$ [00:00:00.064,849] <inf> mflt: Reset Cause Stored: 0x0008
+uart:~$ [00:00:00.065,673] <inf> mflt: GNU Build ID: 67839ffc52fc7553478e1610a98e002ad00cbc6b
+uart:~$ [00:00:00.065,887] <err> memfault_ncs: Failed to provision certificates, error: -17
+uart:~$ [00:00:00.065,917] <wrn> memfault_ncs: Certificates can not be provisioned while LTE is active
+uart:~$ [00:00:00.069,458] <inf> main: DrySpool firmware started, version: 0.1.7, cloud protocol: CoAP
+uart:~$ [00:00:00.069,488] <inf> main: Memfault software_version: 0.1.7+0
+uart:~$ [00:00:00.070,312] <inf> wifi_supplicant: wpa_supplicant initialized
+uart:~$ [00:00:00.070,800] <inf> application: Reset reason: 0x0
+uart:~$ [00:00:00.071,014] <inf> cloud_connection: Setting up nRF Cloud library...
+uart:~$ [00:00:00.071,044] <inf> nrf_cloud_info: Device ID: C76180701B209E51
+uart:~$ [00:00:00.071,075] <inf> nrf_cloud_info: Protocol:          CoAP
+uart:~$ [00:00:00.071,105] <inf> nrf_cloud_info: Download protocol: HTTPS
+uart:~$ [00:00:00.071,105] <inf> nrf_cloud_info: Sec tag:           16842753
+uart:~$ [00:00:00.071,105] <inf> nrf_cloud_info: CoAP JWT Sec tag:  16842753
+uart:~$ [00:00:00.071,136] <inf> nrf_cloud_info: Host name:         coap.nrfcloud.com
+uart:~$ [00:00:00.097,045] <inf> nrf_cloud_credentials: Sec Tag: 16842753; CA: Yes, Client Cert: Yes, Private Key: Yes
+uart:~$ [00:00:00.097,106] <inf> nrf_cloud_credentials: CA Size: 1825, AWS: Likely, CoAP: Likely
+uart:~$ [00:00:00.097,473] <inf> dryspool_sensors: BME probe: address 0x77, chip ID 0x60
+uart:~$ [00:00:00.125,579] <inf> dryspool_sensors: BME280 startup: 24.28 C, 30.98 %RH
+uart:~$ uart:~$ uart:~$ 
+uart:~$ app version
+0.1.7
+uart:~$ kernel uptime
+Uptime: 21085 ms
+uart:~$ 

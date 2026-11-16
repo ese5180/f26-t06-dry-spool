@@ -1,0 +1,18 @@
+WARNING: Specifying runner options for multiple domains is experimental.
+If problems are experienced, please specify a single domain using '--domain <domain>'
+-- west flash: using runner nrfutil
+-- runners.nrfutil: Flashing file: C:\ncs\v3.4.0\dryspool-hapi\build-closed-loop\mcuboot\zephyr\zephyr.hex
+-- runners.nrfutil: Connecting to probe
+-- runners.nrfutil: Erasing address ranges touched by firmware
+-- runners.nrfutil: Programming image
+-- runners.nrfutil: Verifying image
+-- runners.nrfutil: Board(s) with serial number(s) 1050794921 flashed successfully.
+-- west flash: using runner nrfutil
+-- runners.nrfutil: reset after flashing requested
+-- runners.nrfutil: Flashing file: C:\ncs\v3.4.0\dryspool-hapi\build-closed-loop\firmware\zephyr\zephyr.signed.hex
+-- runners.nrfutil: Connecting to probe
+-- runners.nrfutil: Erasing address ranges touched by firmware
+-- runners.nrfutil: Programming image
+-- runners.nrfutil: Verifying image
+-- runners.nrfutil: Reset
+-- runners.nrfutil: Board(s) with serial number(s) 1050794921 flashed successfully.

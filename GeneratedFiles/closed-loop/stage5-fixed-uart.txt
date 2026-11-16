@@ -1,0 +1,73 @@
+*** Booting My Application v2.3.0-dev-c1d2d128a001 ***
+*** Using nRF Connect SDK v3.4.0-99553055607b ***
+*** Using Zephyr OS v4.4.0-bf801e4e3d19 ***
+I: Starting bootloader
+I: LCS-awareness disabled, skipping LCS check
+I: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+I: Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+I: Boot source: none
+I: Image index: 0, Swap type: none
+I: Bootloader chainload address offset: 0x10000
+I: Image version: v0.1.7
+I: Jumping to the first image slot[m
+[1;32muart:~$ [m[8D[J[00:00:00.048,339] [1;31m<err> wifi_nrf_bus: Error: RDSR2 failed[0m
+[1;32muart:~$ [m[8D[J[00:00:00.048,400] [1;31m<err> wifi_nrf: zep_shim_bus_qspi_dev_add: RPU enable failed with error -1[0m
+[1;32muart:~$ [m[8D[J[00:00:00.048,461] [1;31m<err> wifi_nrf: nrf_wifi_bus_qspi_dev_add: nrf_wifi_osal_bus_qspi_dev_add failed[0m
+[1;32muart:~$ [m[8D[J[00:00:00.048,553] [1;31m<err> wifi_nrf: nrf_wifi_bal_dev_add: Bus dev_add failed[0m
+[1;32muart:~$ [m[8D[J[00:00:00.048,614] [1;31m<err> wifi_nrf: nrf_wifi_sys_hal_dev_add: nrf_wifi_bal_dev_add failed[0m
+[1;32muart:~$ [m[8D[J[00:00:00.048,797] [1;31m<err> wifi_nrf: nrf_wifi_sys_fmac_dev_add: nrf_wifi_sys_hal_dev_add failed[0m
+[1;32muart:~$ [m[8D[J[00:00:00.048,828] [1;31m<err> wifi_nrf: nrf_wifi_fmac_dev_add_zep: nrf_wifi_fmac_dev_add failed[0m
+[1;32muart:~$ [m[8D[J[00:00:00.048,858] [1;31m<err> wifi_nrf: nrf_wifi_if_start_zep: nrf_wifi_fmac_dev_add_zep failed[0m
+[1;32muart:~$ [m[8D[J*** Booting My Application v0.1.7-d3e90e91b74f ***
+[1;32muart:~$ [m[8D[J*** Using nRF Connect SDK v3.4.0-99553055607b ***
+[1;32muart:~$ [m[8D[J*** Using Zephyr OS v4.4.0-bf801e4e3d19 ***
+[1;32muart:~$ [m[8D[J[00:00:00.052,337] [0m<inf> mflt: Periodic background upload scheduled - initial delay=331s period=300s[0m
+[1;32muart:~$ [m[8D[J[00:00:00.052,825] [0m<inf> mflt: Reset Reason, HWINFO=0x0001[0m
+[1;32muart:~$ [m[8D[J[00:00:00.052,856] [0m<inf> mflt: Reset Cause: Pin Reset[0m
+[1;32muart:~$ [m[8D[J[00:00:00.052,917] [0m<inf> mflt: Reset Cause Stored: 0x000a[0m
+[1;32muart:~$ [m[8D[J[00:00:00.053,741] [0m<inf> mflt: GNU Build ID: 070e1b7488ed35c077f18ebb5f308f78a11d9789[0m
+[1;32muart:~$ [m[8D[J[00:00:00.053,985] [1;31m<err> memfault_ncs: Failed to provision certificates, error: -17[0m
+[1;32muart:~$ [m[8D[J[00:00:00.053,985] [1;33m<wrn> memfault_ncs: Certificates can not be provisioned while LTE is active[0m
+[1;32muart:~$ [m[8D[J[00:00:00.057,525] [0m<inf> main: DrySpool firmware started, version: 0.1.7, cloud protocol: CoAP[0m
+[1;32muart:~$ [m[8D[J[00:00:00.057,556] [0m<inf> main: Memfault software_version: 0.1.7+0[0m
+[1;32muart:~$ [m[8D[J[00:00:00.058,380] [0m<inf> wifi_supplicant: wpa_supplicant initialized[0m
+[1;32muart:~$ [m[8D[J[00:00:00.058,868] [0m<inf> application: Reset reason: 0x0[0m
+[1;32muart:~$ [m[8D[J[00:00:00.059,082] [0m<inf> cloud_connection: Setting up nRF Cloud library...[0m
+[1;32muart:~$ [m[8D[J[00:00:00.059,112] [0m<inf> nrf_cloud_info: Device ID: C76180701B209E51[0m
+[1;32muart:~$ [m[8D[J[00:00:00.059,143] [0m<inf> nrf_cloud_info: Protocol:          CoAP[0m
+[1;32muart:~$ [m[8D[J[00:00:00.059,173] [0m<inf> nrf_cloud_info: Download protocol: HTTPS[0m
+[1;32muart:~$ [m[8D[J[00:00:00.059,173] [0m<inf> nrf_cloud_info: Sec tag:           16842753[0m
+[1;32muart:~$ [m[8D[J[00:00:00.059,173] [0m<inf> nrf_cloud_info: CoAP JWT Sec tag:  16842753[0m
+[1;32muart:~$ [m[8D[J[00:00:00.059,204] [0m<inf> nrf_cloud_info: Host name:         coap.nrfcloud.com[0m
+[1;32muart:~$ [m[8D[J[00:00:00.085,144] [0m<inf> nrf_cloud_credentials: Sec Tag: 16842753; CA: Yes, Client Cert: Yes, Private Key: Yes[0m
+[1;32muart:~$ [m[8D[J[00:00:00.085,174] [0m<inf> nrf_cloud_credentials: CA Size: 1825, AWS: Likely, CoAP: Likely[0m
+[1;32muart:~$ [m[8D[J[00:00:00.085,571] [0m<inf> dryspool_sensors: BME probe: address 0x77, chip ID 0x60[0m
+[1;32muart:~$ [m[8D[J[00:00:00.085,571] [1;31m<err> dryspool_sensors: Unexpected sensor identity/address; expected BME280 at 0x76[0m
+[1;32muart:~$ [m[8D[J[00:00:00.085,601] [1;31m<err> application: DrySpool sensor initialization failed: -19[0m
+[1;32muart:~$ [m[8D[J[1;32muart:~$ [m[8D[J[1;32muart:~$ [m
+[1;32muart:~$ [mapp version
+0.1.7
+[1;32muart:~$ [mkernel thread stacks
+0x200121c8 hostap_iface_wq                  (real size 4416):	unused 4216	usage  200 / 4416 ( 4 %)
+0x2000fd20 msg_thread                       (real size 8192):	unused 7944	usage  248 / 8192 ( 3 %)
+0x2000fc50 led_thread                       (real size 1024):	unused  816	usage  208 / 1024 (20 %)
+0x2000fdf0 con_thread                       (real size 6144):	unused 5664	usage  480 / 6144 ( 7 %)
+0x2000fb80 coap_shadow                      (real size 8192):	unused 7968	usage  224 / 8192 ( 2 %)
+0x200115a0 coap_client_recv_thread          (real size 8192):	unused 7784	usage  408 / 8192 ( 4 %)
+0x20010000 date_time_work_q                 (real size 2048):	unused 1848	usage  200 / 2048 ( 9 %)
+0x20015ce8 mflt_upload                      (real size 4096):	unused 3896	usage  200 / 4096 ( 4 %)
+0x20015728 conn_mgr_monitor                 (real size 6144):	unused 5936	usage  208 / 6144 ( 3 %)
+0x20012090 hostap_handler                   (real size 6144):	unused 5368	usage  776 / 6144 (12 %)
+0x20015528 net_socket_service               (real size 1216):	unused  656	usage  560 / 1216 (46 %)
+0x200153c0 tx_q[0]                          (real size 1024):	unused  808	usage  216 / 1024 (21 %)
+0x20015618 rx_q[0]                          (real size 2048):	unused 1744	usage  304 / 2048 (14 %)
+0x200152b0 net_mgmt                         (real size 8192):	unused 7992	usage  200 / 8192 ( 2 %)
+0x200151c0 tcp_work                         (real size 1024):	unused  824	usage  200 / 1024 (19 %)
+0x20011a40 shell_uart                       (real size 6144):	unused 5088	usage 1056 / 6144 (17 %)
+0x20015e38 sysworkq                         (real size 4096):	unused 3896	usage  200 / 4096 ( 4 %)
+0x20015af0 nrf70_intr_wq                    (real size 2048):	unused 1848	usage  200 / 2048 ( 9 %)
+0x20015be0 nrf70_bh_wq                      (real size 2048):	unused 1880	usage  168 / 2048 ( 8 %)
+0x20011670 logging                          (real size 2048):	unused 1728	usage  320 / 2048 (15 %)
+0x20011b10 idle                             (real size  320):	unused  248	usage   72 /  320 (22 %)
+0x20033100 IRQ 00                           (real size 2048):	unused 1816	usage  232 / 2048 (11 %)
+[1;32muart:~$ [m
