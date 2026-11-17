@@ -19,12 +19,18 @@ export function device(slot, shadow, now = Date.now()) {
     !(ack?.request === desired.request && ack.mode === desired.mode && ack.expires === desired.expires));
   const env = sample.env_valid === true;
   const fan = sample.fan_valid === true && typeof sample.fan_on === 'boolean' ? sample.fan_on : null;
+  const spool = sample.spool_valid === true && sample.spool && typeof sample.spool === 'object' ? {
+    material: typeof sample.spool.material === 'string' ? sample.spool.material.slice(0, 40) : null,
+    color: typeof sample.spool.color === 'string' ? sample.spool.color.slice(0, 80) : null,
+    brand: typeof sample.spool.brand === 'string' ? sample.spool.brand.slice(0, 80) : null,
+    source: sample.spool.source === 'openprinttag' ? 'openprinttag' : 'manual',
+  } : null;
   return {
     slot, device: 'DrySpool ' + slot, ts, online, pending, desired: desired?.mode ?? null,
     desiredId: desired?.request ?? null,
     temperature: env && Number.isFinite(sample.temperature_mc) ? sample.temperature_mc / 1000 : null,
     humidity: env && Number.isFinite(sample.humidity_mpct) ? sample.humidity_mpct / 1000 : null,
-    grams: sample.grams_valid === true ? finite(sample.filament_g) : null, fan,
+    grams: sample.grams_valid === true ? finite(sample.filament_g) : null, fan, spool,
     mode: modes.includes(sample.mode) ? sample.mode : null,
     firmware: typeof sample.firmware === 'string' ? sample.firmware : null,
     ota: phases.includes(sample.ota) ? sample.ota : null,
@@ -106,7 +112,7 @@ async function readCard(card, read) {
   } catch (err) {
     error = err instanceof ApiError ? err.message : 'Could not read the cloud state.';
   }
-  if (!pinned && !known && shadow?.reported?.dryspool?.fan_api !== 1) return null;
+  if (!known && shadow?.reported?.dryspool?.fan_api !== 1) return null;
   return { ...device(slot, shadow), serial, label, error };
 }
 
@@ -118,8 +124,10 @@ export async function fleet(list = inventory, read = readShadow) {
   } catch {
     warning = 'Device discovery is unavailable. The dashboard will retry.';
   }
-  const cards = pinnedSlots().map(slot => ({
-    slot, label: 'Box ' + slot, serial: configuredId(slot), pinned: true
+  const recordsById = new Map([...records.values()].map(record => [record.device_serial.toLowerCase(), record]));
+  const cards = pinnedSlots().filter(slot => recordsById.has(configuredId(slot).toLowerCase()) || warning).map(slot => ({
+    slot, label: 'Box ' + slot, serial: configuredId(slot), pinned: true,
+    known: knownSoftware.has(recordsById.get(configuredId(slot).toLowerCase())?.last_seen_software_version?.software_type?.name)
   }));
   const pinnedIds = new Set(cards.map(card => card.serial.toLowerCase()));
   for (const record of records.values()) {

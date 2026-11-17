@@ -19,7 +19,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 button { cursor: pointer }
 button:disabled { cursor: default }
 button:focus-visible, a:focus-visible { outline: 3px solid #5e7a25; outline-offset: 3px }
-main { max-width: 980px; margin: auto; padding: max(16px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(44px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left)) }
+main { max-width: 1180px; margin: auto; padding: max(16px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(44px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left)) }
 .brandbar, .brand, .titlebar, .boxheading, .boxheading h2, .controlheading, .state { display: flex; align-items: center }
 .brandbar { min-height: 60px; border-bottom: 1px solid var(--line); justify-content: space-between; gap: 10px }
 .brand { font-size: 23px; font-weight: 750; letter-spacing: -1px; gap: 9px }
@@ -28,12 +28,33 @@ main { max-width: 980px; margin: auto; padding: max(16px,env(safe-area-inset-top
 .textbutton:hover, .titlebar a:hover { text-decoration: underline; text-underline-offset: 4px }
 .install { position: relative }
 .installhelp { position: absolute; top: 100%; right: 0; width: min(235px,75vw); z-index: 1; font-size: 14px; line-height: 1.65; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; box-shadow: 0 8px 24px #20312812; margin: 0 }
-.titlebar { justify-content: space-between; gap: 14px; margin: 38px 0 22px }
+.titlebar { justify-content: space-between; gap: 14px; margin: 40px 0 28px }
+.eyebrow { color: #69806f; font-size: 11px; font-weight: 800; letter-spacing: .17em; margin: 0 0 8px }
+.subtitle { color: var(--muted); margin: 10px 0 0; font-size: 14px }
 .cloudlinks { display: flex; gap: 14px; flex-wrap: wrap }
 h1, h2, h3, p { margin-top: 0 }
 h1 { font-size: clamp(29px,4.2vw,44px); letter-spacing: -.055em; line-height: 1.17; margin: 0 }
 .titlebar a { color: var(--pine); font-size: 14px; font-weight: 580; padding: 10px 0; text-decoration: none }
-.grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%, 300px),1fr)); gap: 18px }
+.dashboard-layout { display: grid; grid-template-columns: minmax(210px, 280px) minmax(0, 1fr); gap: 24px; align-items: start }
+.device-list { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px }
+.list-heading, .device-choice, .section-title { display: flex; align-items: center; justify-content: space-between; gap: 12px }
+.list-heading { padding: 4px 6px 14px; border-bottom: 1px solid var(--line) }
+.list-heading h2 { font-size: 16px }
+.list-heading span { color: var(--muted); font: 13px var(--mono) }
+.device-switcher { max-height: min(70vh, 680px); overflow-y: auto; padding-top: 8px }
+.device-choice { width: 100%; min-height: 66px; border: 1px solid transparent; background: transparent; text-align: left; border-radius: 11px; padding: 10px; color: var(--ink) }
+.device-choice:hover { background: #f3f5ea }
+.device-choice.selected { background: #edf3de; border-color: #c4d9aa }
+.device-index { color: #8a9e8c; font: 12px var(--mono) }
+.device-choice-label { flex: 1; min-width: 0; display: grid; gap: 4px }
+.device-choice-label strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px }
+.device-choice-label small { color: var(--muted); font-size: 12px }
+.choice-dot { width: 8px; height: 8px; border-radius: 50%; background: #a8b1a9; flex: none }
+.choice-dot.live { background: #4e892e }
+.detail { min-width: 0 }
+.empty-state { border: 1px dashed #a8b8a6; border-radius: 16px; background: var(--surface); padding: 40px; max-width: 680px; line-height: 1.6 }
+.empty-state p { color: var(--muted) }
+.empty-state a, .source-note a { color: var(--pine) }
 .box { background: var(--surface); border: 1px solid #cbd3c8; border-radius: 16px; box-shadow: 0 3px 10px #20312805 }
 .box { padding: 22px 22px 16px }
 .boxheading, .controlheading { justify-content: space-between; gap: 8px }
@@ -44,12 +65,21 @@ h2 { font-size: 21px; margin: 0; gap: 9px; letter-spacing: -.04em }
 .state i { width: 7px; height: 7px; background: #a6afa8; border-radius: 50% }
 .state.active i { background: #4e892e }
 .readings { margin: 20px 0 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+.readings.stale { opacity: .6 }
+.stale-note { font-size: 13px; color: #855f2d; background: #fff3dc; border-radius: 7px; padding: 10px 12px; margin: 18px 0 0 }
 .metric { background: transparent; padding: 2px 2px }
 .metric.major { grid-column: 1 / -1; background: #eef2de; border-radius: 9px; padding: 14px 18px; margin-bottom: 2px }
 dt, .controlheading span, .box footer { font-size: 13px; color: var(--muted) }
 dd { margin: 5px 0 0; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 28px; font-weight: 550; letter-spacing: -.065em; line-height: 1.15 }
 dd small { font-size: 15px; color: var(--muted); letter-spacing: -.02em }
 .major dd { font-size: clamp(40px,6vw,54px); color: #234435 }
+.spool-panel { border-top: 1px solid var(--line); padding: 18px 0 }
+.section-title span { color: var(--muted); font-size: 12px }
+.material-name { font-size: 18px; font-weight: 650; margin: 14px 0 }
+.supporting { font-size: 14px; line-height: 1.6; color: var(--muted); margin: 12px 0 }
+.storage-advice { display: grid; gap: 5px; padding: 13px 15px; border-radius: 9px; background: #edf3de; color: #2e5432; font-size: 13px; line-height: 1.5 }
+.storage-advice.alert { background: #fff0d9; color: #70401d }
+.source-note { font-size: 12px; line-height: 1.6; color: var(--muted); margin: 12px 0 0 }
 .controls { border-top: 1px solid var(--line); padding-top: 14px }
 h3 { font-size: 16px; margin: 0 }
 .segments { margin-top: 10px; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; padding: 3px; background: #f1f1eb; border: 1px solid var(--line); border-radius: 9px }
@@ -65,7 +95,10 @@ h3 { font-size: 16px; margin: 0 }
 .notice button { background: none; color: inherit; border: none; text-decoration: underline; min-height: 36px }
 @media (max-width: 670px) {
   main { padding-left: max(16px,env(safe-area-inset-left)); padding-right: max(16px,env(safe-area-inset-right)) }
-  .grid { grid-template-columns: 1fr; gap: 15px }
+  .dashboard-layout { grid-template-columns: 1fr; gap: 15px }
+  .device-list { padding: 10px }
+  .device-switcher { display: flex; gap: 8px; overflow-x: auto; max-height: none; padding: 8px 0 2px }
+  .device-choice { min-width: 180px; width: 180px }
   .titlebar { flex-wrap: wrap; margin: 26px 0 16px }
   .box { padding: 18px }
 }

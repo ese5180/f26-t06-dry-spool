@@ -3,7 +3,9 @@
 Target reader candidate: X-NUCLEO-NFC10A1 / ST25R200. The MVP identifies
 spools through the `dryspool spool <id> <empty_g>` serial command and saves
 the active profile locally. The following are integration points for a
-later feature.
+later feature. See the [mobile product plan](MOBILE_PRODUCT_PLAN.md) for
+OpenPrintTag feasibility, the proposed material/color display, tag-writing
+safeguards, and the reader's 2.7–5.5 V IO requirement.
 
 ## Firmware
 
@@ -28,6 +30,9 @@ later feature.
   Treat absent fields on older firmware and stale samples as unavailable.
 - Surface the fresh identity on the matching [box card](../mobile/app/dashboard.js)
   and keep spool identity scoped to that box.
+- A future firmware sample can set `spool_valid` and `spool` fields for
+  `material`, `color`, `brand`, and `source`. Do not infer a material from UID
+  alone or show a previous spool after replacement.
 
 The default offline and connected profiles can run without a reader. Existing
 weight, environment, fan, and OTA checks should continue to pass if the reader

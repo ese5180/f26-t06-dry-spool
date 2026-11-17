@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { command, device, deviceId, fleet, inventory, readShadow } from '../lib/cloud.mjs';
 import { input } from '../lib/http.mjs';
+import { storageGuidance } from '../lib/storage.mjs';
 import { GET } from '../app/api/devices/route.js';
 import { POST } from '../app/api/[slot]/fan/route.js';
 
@@ -22,7 +23,7 @@ test('fresh, valid sensor data and protocol are required for live control', () =
   s.reported.dryspool.fan_api=0;
   assert.equal(device('A',s,now).control,false);
 });
-test('three independent cloud IDs and isolated slot errors', async () => {
+test('configured aliases do not create boxes without matching DrySpool data', async () => {
   const env={NRF_DEVICE_A:'id-A',NRF_DEVICE_B:'id-B',NRF_DEVICE_C:'id-C'};
   assert.equal(deviceId('C',env),'id-C');
   assert.throws(()=>deviceId('C',{...env,NRF_DEVICE_C:'id-a'}),{status:503});
@@ -33,7 +34,7 @@ test('three independent cloud IDs and isolated slot errors', async () => {
     return sample(Date.now());
   });
   assert.ok(warning);
-  assert.deepEqual(boxes.map(b=>[b.slot,b.control]),[['A',true],['B',false],['C',true]]);
+  assert.deepEqual(boxes.map(b=>[b.slot,b.control]),[['A',true],['C',true]]);
 });
 test('C gets its own state URL and acknowledgement; stale commands expire', async () => {
   const s=sample();
@@ -71,7 +72,7 @@ test('dashboard works without a session and only operates a ready fan', async t 
   const list = await GET(new Request('https://example.test/api/devices'));
   assert.equal(list.status,200);
   const rows=await list.json();
-  assert.deepEqual(rows.map(d=>d.slot),['A','B','C','id-new-box']);
+  assert.deepEqual(rows.map(d=>d.slot),['B','id-new-box']);
   assert.equal(rows.at(-1).label,'Workshop');
   const request = slot => new Request('https://example.test/api/' + slot + '/fan',{method:'POST',
     headers:{origin:'https://example.test','content-type':'application/json'},body:'{"mode":"auto"}'});
@@ -117,4 +118,34 @@ test('a known DrySpool box stays visible offline and a new shadow is discovered 
   assert.ok(!before.rows.some(d=>d.serial==='new'));
   const after=await fleet(list,async id=>id==='new'?sample(Date.now()):{});
   assert.equal(after.rows.find(d=>d.serial==='new').control,true);
+});
+
+test('fleet supports one or ten actual boxes without fixed placeholder cards', async () => {
+  Object.assign(process.env,{NRF_DEVICE_A:'unused-a',NRF_DEVICE_B:'unused-b',NRF_DEVICE_C:'unused-c'});
+  const makeRecords = count => new Map(Array.from({length:count}, (_, i) => {
+    const id = 'device-' + i;
+    return [id,{device_serial:id,last_seen_software_version:{software_type:{name:'dryspool-wifi-box'}}}];
+  }));
+  for (const count of [1, 10]) {
+    const {rows} = await fleet(async()=>makeRecords(count),async()=>sample(Date.now()));
+    assert.equal(rows.length,count);
+    assert.equal(new Set(rows.map(row=>row.serial)).size,count);
+  }
+});
+
+test('storage guidance needs a verified material and never guesses unknown limits', () => {
+  assert.equal(storageGuidance('PETG',22).above,true);
+  assert.equal(storageGuidance('PLA',25).max,30);
+  assert.equal(storageGuidance('PA11-CF',25),null);
+  assert.equal(storageGuidance(null,20),null);
+});
+
+test('spool identity is exposed only when firmware marks it valid', () => {
+  const shadow = sample();
+  shadow.reported.dryspool.spool = {material:'PETG',color:'Blue',source:'openprinttag'};
+  assert.equal(device('A',shadow,now).spool,null);
+  shadow.reported.dryspool.spool_valid = true;
+  assert.deepEqual(device('A',shadow,now).spool,{
+    material:'PETG',color:'Blue',brand:null,source:'openprinttag'
+  });
 });
