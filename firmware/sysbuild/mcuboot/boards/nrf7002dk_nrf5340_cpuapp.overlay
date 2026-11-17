@@ -6,7 +6,7 @@
 
 /delete-node/ &slot1_partition;
 
-#include "../../../../mvp_firmware/boards/mcuboot-image-slots.dtsi"
+#include "../../../boards/mcuboot-image-slots.dtsi"
 
 / {
 	chosen {

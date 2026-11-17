@@ -33,8 +33,13 @@ On Vercel, select the Next.js preset and deploy the `mobile` directory. Open the
 
 ## Test with hardware
 
-1. Connect Box A over USB. Follow the [firmware guide](../mvp_firmware/README.md) to flash it, configure Wi-Fi and install its device certificate. Check the startup log for `Device Wi-Fi MAC` and `nRF Cloud device ID`, then match the ID to Box A. Repeat for B and C when available.
+1. Connect Box A over USB. Follow the [firmware guide](../firmware/README.md) to flash it, configure Wi-Fi and install its device certificate. Check the startup log for `Device Wi-Fi MAC` and `nRF Cloud device ID`, then match the ID to Box A. Repeat for B and C when available.
 2. Compare the temperature and relative humidity in A's `reported.dryspool` shadow with its dashboard card and serial output. Remaining filament displays a dash until calibration is complete. Tare the scale, calibrate it with a known mass, enter the empty spool mass and verify the reading in grams.
 3. Select **On**, **Off** and **Auto** on Box A. After each command, wait for **Box confirmed**, watch the physical fan and check the modes on B and C. Only the selected device receives `desired.config.fan`. The displayed fan output reflects the GPIO signal. Check rotation on the box.
 4. Disconnect one box and wait about 45 seconds. Its fan controls should become unavailable while the two online boxes remain responsive.
-5. Open **Metrics history** to view uploaded data or **Firmware releases** to open the team's OTA releases. To demonstrate an update on a single box, deploy to a cohort containing only that device and compare the firmware versions on all three cards afterward. [Signing and OTA instructions](../mvp_firmware/README.md#verify-a-signed-firmware-update)
+5. Open **Metrics history** to view uploaded data or **Firmware releases** to open the team's OTA releases. To demonstrate an update on a single box, deploy to a cohort containing only that device and compare the firmware versions on all three cards afterward. [Signing and OTA instructions](../firmware/README.md#verify-a-signed-firmware-update)
+
+## Future NFC spool identification
+
+See the [NFC integration notes](../docs/NFC_INTEGRATION.md) for where an
+optional spool identity would enter the dashboard data model.

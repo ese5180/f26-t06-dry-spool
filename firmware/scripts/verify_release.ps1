@@ -1,5 +1,5 @@
 param(
-    [string]$BuildDir = ".\build-dryspool"
+    [string]$BuildDir = ".\build-wifi-box"
 )
 
 $ErrorActionPreference = "Stop"

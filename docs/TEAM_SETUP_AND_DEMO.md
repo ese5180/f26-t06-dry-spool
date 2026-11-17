@@ -3,18 +3,19 @@
 Use this guide to set up a teammate's PC, add another nRF7002 DK, publish a
 firmware release, and run the classroom demo.
 
-For the current Wi-Fi box on `feature/mvp-firmware-sirui`, use the [MVP build, flash and OTA instructions](../mvp_firmware/README.md). Device certificate onboarding below also applies to the MVP. The `dryspool-app` release examples and build paths in this guide belong to the earlier firmware. Publish MVP releases for `dryspool-wifi-box` and select the cohort containing the intended device.
+Use the [firmware guide](../firmware/README.md) for wiring, build commands,
+serial commands, and bench checks.
 
 ## 1. Shared project configuration
 
 | Item | Value |
 | --- | --- |
-| Branch | `wireless-update` |
+| Branch | `feature/mvp-firmware-sirui` |
 | NCS | `3.4.0` |
 | Board | `nrf7002dk/nrf5340/cpuapp/ns` |
 | Organization | `zicong-zhang` |
 | Project | `default-project` |
-| Software type | `dryspool-app` |
+| Software type | `dryspool-wifi-box` |
 | Hardware version | `nrf7002dk-rev1` |
 | Default cohort | `default` |
 
@@ -43,8 +44,8 @@ Organization Auth Token (OAT) in Drive or Git.
    ```powershell
    git clone https://github.com/ese5180/f26-t06-dry-spool.git
    cd f26-t06-dry-spool
-   git switch main
-   git pull --ff-only origin main
+   git switch feature/mvp-firmware-sirui
+   git pull --ff-only
    ```
 
 4. Download `dryspool-signing.pem` from the restricted Drive folder and place
@@ -76,38 +77,16 @@ Organization Auth Token (OAT) in Drive or Git.
 
 ## 3. Build and flash
 
-Connect the DK and identify its J-Link serial number:
+Follow [Build, flash, and open the serial shell](../firmware/README.md#build-flash-and-open-the-serial-shell)
+for the connected image. Use the J-Link serial reported by `nrfutil device list`
+to select the board and open its application UART at 115200 baud.
 
-```powershell
-nrfutil device list
-```
-
-Build from the firmware directory:
-
-```powershell
-cd firmware
-west build --pristine --sysbuild `
-  -b nrf7002dk/nrf5340/cpuapp/ns `
-  . `
-  -d ..\build-dryspool `
-  -- '-DEXTRA_CONF_FILE=coap.conf;coap-fota.conf;local.conf'
-```
-
-Flash the selected board:
-
-```powershell
-west flash -d ..\build-dryspool --dev-id <JLINK_SERIAL>
-```
-
-Release files:
+Release files from that build:
 
 ```text
-build-dryspool/firmware/zephyr/zephyr.signed.bin
-build-dryspool/firmware/zephyr/zephyr.elf
+build-wifi-box/firmware/zephyr/zephyr.signed.bin
+build-wifi-box/firmware/zephyr/zephyr.elf
 ```
-
-Open the application UART at 115200 baud. COM9 was the application shell on
-the first DK, but each teammate must check their own COM-port assignment.
 
 ## 4. Add a new DK to nRF Cloud
 
@@ -130,8 +109,9 @@ key. Do not create a different CA for each device.
 
 ### Install credentials on the board
 
-Flash the DrySpool firmware first, then close any program using the application
-COM port.
+Flash the connected firmware and read its `nRF Cloud device ID` from
+the application UART. Close the serial monitor and use that ID with the
+credential installer.
 
 ```powershell
 $deviceDir = 'C:\DrySpool-secrets\nrfcloud\devices\<BOARD_LABEL>'
@@ -140,6 +120,7 @@ New-Item -ItemType Directory -Force $deviceDir
 device_credentials_installer `
   --port <APPLICATION_COM_PORT> `
   --cmd-type tls_cred_shell `
+  --id-str <NRF_CLOUD_DEVICE_ID> `
   --local-cert `
   --ca 'C:\DrySpool-secrets\nrfcloud\<TEAM_CA_CERT>.pem' `
   --ca-key 'C:\DrySpool-secrets\nrfcloud\<TEAM_CA_PRIVATE_KEY>.pem' `
@@ -202,11 +183,11 @@ mflt get_latest_url
 Confirm:
 
 - the device ID is unique and matches the cloud record;
-- software type is `dryspool-app`;
+- software type is `dryspool-wifi-box`;
 - hardware is `nrf7002dk-rev1`;
 - the expected version is reported;
 - Memfault data posts successfully; and
-- all four DrySpool telemetry values appear in the cloud.
+- the [expected telemetry channels](../firmware/README.md#connect-to-wi-fi-and-nrf-cloud) appear when their readings are valid.
 
 The current build disables the extra button thread to save RAM, so BUTTON2 does
 not trigger FOTA. Use:
@@ -221,14 +202,13 @@ firmware release once, then deploy it to a cohort rather than per device.
 
 ## 6. Publish a new FOTA release
 
-1. Increment the version in both `firmware/VERSION` and the `APP_VERSION`
-   default in `firmware/Kconfig`.
+1. Increment the version in `firmware/VERSION`. The firmware derives its version from that file.
 2. Build pristine with the same team signing key.
 3. Verify the MCUboot signature and confirm that the exact release ELF contains
    both the GNU and Memfault Build IDs:
 
    ```powershell
-   .\firmware\scripts\verify_release.ps1 -BuildDir .\build-dryspool
+   .\firmware\scripts\verify_release.ps1 -BuildDir .\build-wifi-box
    ```
 
    Do not upload an ELF from another build, even if its version string is the
@@ -242,19 +222,19 @@ firmware release once, then deploy it to a cohort rather than per device.
 
    nrfcloud --org-token $env:DRYSPOOL_OAT --org zicong-zhang --project default-project `
      upload-mcu-symbols `
-     --software-type dryspool-app `
+     --software-type dryspool-wifi-box `
      --software-version '<NEW_VERSION>' `
      --revision '<GIT_COMMIT>' `
-     .\build-dryspool\firmware\zephyr\zephyr.elf
+     .\build-wifi-box\firmware\zephyr\zephyr.elf
 
    nrfcloud --org-token $env:DRYSPOOL_OAT --org zicong-zhang --project default-project `
      upload-ota-payload `
      --hardware-version nrf7002dk-rev1 `
-     --software-type dryspool-app `
+     --software-type dryspool-wifi-box `
      --software-version '<NEW_VERSION>' `
      --revision '<GIT_COMMIT>' `
      --notes '<RELEASE_NOTES>' `
-     .\build-dryspool\firmware\zephyr\zephyr.signed.bin
+     .\build-wifi-box\firmware\zephyr\zephyr.signed.bin
    ```
 
 5. Deploy to the test cohort first (`deepa-test` holds one test board):
@@ -293,7 +273,7 @@ Prepare a DK running version **N** and upload—but do not activate—version
    ```
 
 7. Point out the download, reboot, MCUboot swap, and
-   `Confirming FOTA update image` log. Do not unplug or reset during download.
+   trial image confirmation log after the local settings, sensors, and fan checks. Do not unplug or reset during download.
 8. After the cloud reconnects, run:
 
    ```text

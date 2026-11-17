@@ -1,48 +1,24 @@
-#
-# Copyright (c) 2022 Nordic Semiconductor ASA
-#
-# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
-#
-
 cmake_minimum_required(VERSION 3.20.0)
-
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(dryspool)
 
-include(../mvp_firmware/cmake/memfault.cmake)
+target_include_directories(app PRIVATE src)
+target_sources(app PRIVATE
+  src/main.c
+  src/sensors/bme280.c
+  src/sensors/nau7802.c
+  src/control/fan.c
+  src/spool/profile.c
+  src/spool/calibration.c
+  src/shell/commands.c
+  src/readings.c
+)
 
-# Exactly one of mqtt.conf or coap.conf must be selected
-if(NOT CONFIG_NRF_CLOUD_MQTT AND NOT CONFIG_NRF_CLOUD_COAP)
-  message(FATAL_ERROR
-    "No nRF Cloud transport selected. Build with "
-    "-DEXTRA_CONF_FILE=\"mqtt.conf\" or -DEXTRA_CONF_FILE=\"coap.conf\" (or a file list "
-    "including one of them).")
-elseif(CONFIG_NRF_CLOUD_MQTT AND CONFIG_NRF_CLOUD_COAP)
-  message(FATAL_ERROR
-    "Both nRF Cloud transports are enabled. Build with only one of "
-    "-DEXTRA_CONF_FILE=\"mqtt.conf\" or -DEXTRA_CONF_FILE=\"coap.conf\".")
+if(CONFIG_DRYSPOOL_CLOUD)
+  include(cmake/memfault.cmake)
+  target_sources(app PRIVATE src/cloud/cloud.c src/cloud/telemetry.c src/cloud/box_shadow.c)
+  target_sources_ifdef(CONFIG_SAMPLE_MEMFAULT_FOTA app PRIVATE src/ota/trial_image.c)
+  if("${CONFIG_MEMFAULT_NCS_PROJECT_KEY}" STREQUAL "")
+    message(WARNING "No Memfault project key configured. For release checks, build with -DEXTRA_CONF_FILE=<absolute path to firmware/local.conf>.")
+  endif()
 endif()
-
-# Include certs files if enabled.
-zephyr_include_directories_ifdef(CONFIG_NRF_CLOUD_PROVISION_CERTIFICATES certs)
-
-# NORDIC SDK APP START
-target_sources(app PRIVATE src/main.c)
-target_sources(app PRIVATE src/application.c)
-target_sources(app PRIVATE src/cloud_connection.c)
-target_sources(app PRIVATE src/message_queue.c)
-target_sources(app PRIVATE src/dryspool_sensors.c)
-target_sources(app PRIVATE src/led_control.c)
-target_sources(app PRIVATE src/shadow_config.c)
-
-if(CONFIG_COAP_SHADOW)
-  target_sources(app PRIVATE src/shadow_support_coap.c)
-endif()
-
-if(CONFIG_MEMFAULT_METRICS_BATTERY_ENABLE)
-  target_sources(app PRIVATE src/dryspool_power.c)
-endif()
-
-# NORDIC SDK APP END
-
-zephyr_include_directories(src)

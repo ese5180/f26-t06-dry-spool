@@ -11,7 +11,7 @@
 /delete-node/ &storage_partition;
 /delete-node/ &sram0_ns;
 
-#include "../../mvp_firmware/boards/mcuboot-image-slots.dtsi"
+#include "mcuboot-image-slots.dtsi"
 
 &slot0_partition {
 	ranges = <0x0 0x10000 DT_SIZE_K(896)>;
@@ -129,3 +129,5 @@
 		data-partitions = <&storage_partition>;
 	};
 };
+
+#include "dryspool-peripherals.dtsi"

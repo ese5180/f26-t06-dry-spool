@@ -1,2 +1,0 @@
-#include "../../firmware/boards/nrf7002dk_nrf5340_cpuapp_ns.overlay"
-#include "nrf7002dk_nrf5340_cpuapp.overlay"
