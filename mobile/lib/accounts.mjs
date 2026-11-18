@@ -14,11 +14,12 @@ function publicConfig() {
 export async function sessionClient() {
   const config = publicConfig();
   const jar = await cookies();
+  const secure = Boolean(process.env.VERCEL || process.env.DRYSPOOL_WEB_ORIGIN?.startsWith('https://'));
   return createServerClient(...config, {
     cookies: {
       getAll: () => jar.getAll(),
       setAll: entries => entries.forEach(({name, value, options}) =>
-        jar.set(name, value, { ...options, httpOnly: true, sameSite: 'lax', secure: Boolean(process.env.VERCEL) })),
+        jar.set(name, value, { ...options, httpOnly: true, sameSite: 'lax', secure })),
     },
   });
 }

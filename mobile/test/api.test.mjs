@@ -26,7 +26,7 @@ test('fresh, valid sensor data and protocol are required for live control', () =
 });
 test('the selected serial gets the command and acknowledgment; stale commands expire', async () => {
   const s=sample();
-  Object.assign(process.env,{NRF_ORG:'test',NRF_PROJECT:'test',NRF_DEVICE_A:'a',NRF_DEVICE_B:'b',NRF_DEVICE_C:'c',DRYSPOOL_OAT:'test-only'});
+  Object.assign(process.env,{NRF_ORG:'test',NRF_PROJECT:'test',DRYSPOOL_OAT:'test-only'});
   const calls=[];
   const call=(id,patch)=>readShadow(id,patch,async (url,options)=>{
     calls.push([url,options.method]);
