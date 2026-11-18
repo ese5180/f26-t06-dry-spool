@@ -93,6 +93,35 @@ h3 { font-size: 16px; margin: 0 }
 .firmware dd { font-family: inherit; font-size: 14px; line-height: 1.4; letter-spacing: normal; overflow-wrap: anywhere }
 .notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff1d5; color: #643e11; border: 1px solid #d4b885; border-radius: 8px; padding: 8px 14px; margin-bottom: 16px; font-size: 14px }
 .notice button { background: none; color: inherit; border: none; text-decoration: underline; min-height: 36px }
+.section-nav { display: flex; gap: 20px; border-bottom: 1px solid var(--line); margin-top: 12px }
+.section-nav button { min-height: 48px; padding: 8px 2px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--muted); font-weight: 650 }
+.section-nav button[aria-current] { border-bottom-color: var(--pine); color: var(--pine) }
+.primary-action { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 16px; border: 1px solid var(--pine); background: var(--pine); color: white; font-weight: 650; border-radius: 8px; text-decoration: none }
+.primary-action:disabled { opacity: .65 }
+.actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap }
+.empty-state .primary-action { color: white }
+.auth-layout { max-width: 490px; padding-top: max(40px, env(safe-area-inset-top)) }
+.account-card h1 { margin: 22px 0 10px }
+.account-card p { margin: 12px 0; color: var(--muted) }
+.stack { display: grid; gap: 13px; max-width: 400px; margin: 18px 0 }
+.stack label { display: grid; gap: 5px; font-weight: 600 }
+.stack input { border: 1px solid var(--line); border-radius: 8px; background: white; padding: 10px; font: inherit; min-width: 0; min-height: 44px; color: var(--ink) }
+.overview { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); gap: 14px }
+.summary-card { display: grid; gap: 8px; text-align: left; color: var(--ink) }
+.summary-card:hover { border-color: var(--pine) }
+.summary-card strong { font-size: 17px; overflow-wrap: anywhere }
+.summary-reading { font-size: 20px; font-family: var(--mono); margin-top: 6px }
+.summary-alert { color: #70401d; font-size: 13px; font-weight: 650 }
+.box-status-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: end; column-gap: 12px }
+.last-report { margin: 7px 0 0; color: var(--muted); font-size: 13px }
+.back { margin-bottom: 8px }
+.managed-boxes { list-style: none; margin: 0; padding: 4px 18px }
+.managed-boxes li { display: flex; justify-content: space-between; gap: 12px; align-items: center; min-height: 64px }
+.managed-boxes li + li { border-top: 1px solid var(--line) }
+.managed-boxes small { color: var(--muted); display: block; margin-top: 4px }
+.settings-panel p { margin: 10px 0 }
+.settings-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line) }
+.cloudlinks a, .settings-section a { color: var(--pine) }
 @media (max-width: 670px) {
   main { padding-left: max(16px,env(safe-area-inset-left)); padding-right: max(16px,env(safe-area-inset-right)) }
   .dashboard-layout { grid-template-columns: 1fr; gap: 15px }
@@ -101,4 +130,5 @@ h3 { font-size: 16px; margin: 0 }
   .device-choice { min-width: 180px; width: 180px }
   .titlebar { flex-wrap: wrap; margin: 26px 0 16px }
   .box { padding: 18px }
+  .empty-state { padding: 22px }
 }

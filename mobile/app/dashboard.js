@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { storageGuidance, storageSource } from "../lib/storage.mjs";
+import { api } from "./client-api";
 
 const MODES = { on: "On", off: "Off", auto: "Auto" };
 const OTA_PHASES = {
@@ -13,22 +14,10 @@ const releasesUrl = process.env.NEXT_PUBLIC_NRF_CLOUD_RELEASES_URL || projectUrl
 const metricsUrl = process.env.NEXT_PUBLIC_NRF_CLOUD_METRICS_URL || projectUrl + "/dashboards/memfault-metrics";
 const controlAge = 45_000;
 
-async function api(path, body, signal) {
-  const response = await fetch(path, {
-    method: body === undefined ? "GET" : "POST",
-    headers: body === undefined ? {} : { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    credentials: "omit",
-    cache: "no-store",
-    signal: signal || AbortSignal.timeout(18_000),
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const error = new Error(typeof payload.error === "string" ? payload.error : "Could not connect. Try again.");
-    error.status = response.status;
-    throw error;
-  }
-  return {payload, headers: response.headers};
+function boxStatus(data, now, cloudError) {
+  if (cloudError || data.error) return "Connection unavailable";
+  if (!data.ts) return "Waiting for first reading";
+  return data.online && now - data.ts < controlAge ? "Online" : "Offline";
 }
 
 function Metric({ name, value, unit, large = false }) {
@@ -36,11 +25,11 @@ function Metric({ name, value, unit, large = false }) {
     <dt>{name}</dt>
     <dd>{Number.isFinite(value) ? value.toLocaleString("en-US", {
       maximumFractionDigits: large ? 0 : 1,
-    }) : "—"} <small>{unit}</small></dd>
+    }) : <small>No reading</small>} {Number.isFinite(value) && <small>{unit}</small>}</dd>
   </div>;
 }
 
-function Box({ data, networkError, now, reload }) {
+function Box({ data, networkError, now, reload, openSettings }) {
   const {slot, serial, label} = data;
   const [sending, setSending] = useState(false);
   const [command, setCommand] = useState(null);
@@ -52,8 +41,7 @@ function Box({ data, networkError, now, reload }) {
   const ack = command && data?.request === command.id && data?.mode === command.mode && data?.control;
   const waiting = command && !ack && now - command.sent < 30_000;
   const blocked = !connected || !data?.control || sending || waiting || data?.pending;
-  const state = networkError ? "Disconnected" : data?.error ? "Read failed" : !timestamp ? "Awaiting data" :
-    data.online === false ? "Offline" : connected ? "Online" : "Stale reading";
+  const state = boxStatus(data, now, networkError);
   const output = data?.fan === true ? "On" : data?.fan === false ? "Off" : "Unknown";
   const firmware = typeof data?.firmware === "string" ? data.firmware.trim() : "";
   const spool = connected ? data?.spool : null;
@@ -81,14 +69,19 @@ function Box({ data, networkError, now, reload }) {
   return <article className="box">
     <div className="boxheading">
       <h2>{label}</h2>
-      <span className={"state" + (connected ? " active" : "")}><i />{state}</span>
+      <div className="box-status-actions">
+        <span className={"state" + (connected ? " active" : "")}><i />{state}</span>
+        <button type="button" className="textbutton" onClick={openSettings}>Settings</button>
+      </div>
     </div>
     {label !== "Box " + serial && <p className="serial">{serial}</p>}
-    {!connected && timestamp > 0 && <p className="stale-note">Last recorded readings below · current conditions unknown</p>}
+    <p className="last-report">{timestamp > 0 ? <>Last report <time dateTime={new Date(timestamp).toISOString()}>
+      {new Date(timestamp).toLocaleString()}</time></> : "No reports yet"}</p>
+    {!connected && timestamp > 0 && <p className="stale-note">Last recorded readings</p>}
     <dl className={"readings" + (!connected ? " stale" : "")}>
-      <Metric large name="Filament remaining" value={data?.grams} unit="g" />
+      <Metric large name="Relative humidity" value={data?.humidity} unit="%" />
       <Metric name="Temperature" value={data?.temperature} unit="°C" />
-      <Metric name="Relative humidity" value={data?.humidity} unit="%" />
+      <Metric name="Filament remaining" value={data?.grams} unit="g" />
     </dl>
     <section className="spool-panel" aria-label="Filament information">
       <div className="section-title"><h3>Filament</h3><span>{spool?.source === "openprinttag" ? "OpenPrintTag" : spool ? "Manual profile" : "No tag data"}</span></div>
@@ -114,9 +107,6 @@ function Box({ data, networkError, now, reload }) {
       {firmware && <div><dt>Firmware version</dt><dd>{firmware}</dd></div>}
       {ota && <div><dt>Update status</dt><dd>{ota}</dd></div>}
     </dl>}
-    <footer>{timestamp > 0 ? <>Last report <time dateTime={new Date(timestamp).toISOString()}>
-      {new Date(timestamp).toLocaleString("en-US", { month:"2-digit", day:"2-digit", hour:"2-digit",
-        minute:"2-digit", second:"2-digit", hour12:false })}</time></> : "No reports yet"}</footer>
   </article>;
 }
 
@@ -146,10 +136,63 @@ function Install() {
   </div>;
 }
 
-export default function Dashboard() {
+const setupUrl = process.env.NEXT_PUBLIC_DRYSPOOL_SETUP_URL || "dryspool://setup";
+
+function AddBox({onClose}) {
+  return <section className="empty-state">
+    <h2>Add a box</h2>
+    <p>On your phone, open DrySpool Setup and sign in with this account. Follow the instructions near the powered box.</p>
+    <div className="actions">
+      <a className="primary-action" href={setupUrl}>Open Setup app</a>
+      <button className="textbutton" onClick={onClose}>Back to boxes</button>
+    </div>
+  </section>;
+}
+
+function DeviceSettings({box, reload}) {
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
+  async function rename(event) {
+    event.preventDefault();
+    const label = new FormData(event.currentTarget).get("label");
+    setBusy(true);
+    setError("");
+    setSaved(false);
+    try {
+      await api("/api/devices/" + encodeURIComponent(box.serial), {label}, undefined, "PATCH");
+      setSaved(true);
+      reload();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return <section className="box settings-panel">
+    <h2>{box.label}</h2>
+    <p className="serial">{box.serial}</p>
+    <form className="stack" onSubmit={rename}>
+      <label>Box name<input name="label" defaultValue={box.label} maxLength={64} required /></label>
+      <button className="primary-action" disabled={busy}>Save name</button>
+    </form>
+    {saved && <p role="status">Name saved.</p>}
+    {error && <p role="alert">{error}</p>}
+    <div className="settings-section">
+      <h3>Change Wi-Fi</h3>
+      <p>Open DrySpool Setup on your phone near this box. Its account stays the same.</p>
+      <a href={setupUrl}>Open Setup app ↗</a>
+    </div>
+  </section>;
+}
+
+export default function Dashboard({account,signOut,onExpired}) {
   const [devices, setDevices] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [discoveryWarning, setDiscoveryWarning] = useState("");
+  const [tab, setTab] = useState("monitor");
+  const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [accountError, setAccountError] = useState("");
   const [error, setError] = useState("");
   const [now, setNow] = useState(0);
   const [refresh, setRefresh] = useState(0);
@@ -165,12 +208,16 @@ export default function Dashboard() {
       request = new AbortController();
       const timeout = setTimeout(() => request.abort(), 18_000);
       try {
-        const {payload: value, headers} = await api("/api/devices", undefined, request.signal);
+        const {payload: value} = await api("/api/devices", undefined, request.signal);
         if (!active || generation !== run) return;
         if (!Array.isArray(value)) throw new Error("Unexpected device data format.");
-        setDevices(value); setDiscoveryWarning(headers.get("X-DrySpool-Discovery") || ""); setError("");
+        setDevices(value); setError("");
       } catch (e) {
         if (!active || generation !== run) return;
+        if (e.status === 401) {
+          onExpired();
+          return;
+        }
         setError(e.status ? e.message : "Lost connection to the cloud.");
       } finally {
         clearTimeout(timeout);
@@ -200,52 +247,84 @@ export default function Dashboard() {
     const timer = setInterval(() => setNow(Date.now()), 2000);
     return () => clearInterval(timer);
   }, []);
-  useEffect(() => {
-    if (!devices?.length) { setSelectedSlot(null); return; }
-    if (!devices.some(d => d.slot === selectedSlot)) {
-      const firstOnline = devices.find(d => d.online && d.ts > Date.now() - controlAge);
-      setSelectedSlot((firstOnline || devices[0]).slot);
-    }
-  }, [devices, selectedSlot]);
-  const selected = devices?.find(d => d.slot === selectedSlot);
-  const onlineCount = devices?.filter(d => d.online && d.ts > now - controlAge).length || 0;
+  const selected = devices?.find(d => d.slot === selectedSlot) || (devices?.length === 1 ? devices[0] : null);
+  const onlineCount = devices?.filter(d => boxStatus(d, now, error) === "Online").length || 0;
+  function navigate(page) {
+    setTab(page);
+    setAdding(false);
+    setEditing(false);
+    setSelectedSlot(null);
+  }
+  function select(box, options = {}) {
+    setSelectedSlot(box.slot);
+    setEditing(!!options.edit);
+    setAdding(false);
+    setTab(options.edit ? "devices" : "monitor");
+  }
+  function add() {
+    navigate("devices");
+    setAdding(true);
+  }
   return <main>
     <header className="brandbar">
       <div className="brand"><img alt="" width="36" height="36" src="/icon-192.png" />DrySpool</div>
       <Install />
     </header>
-    <div className="titlebar"><div><p className="eyebrow">PROJECT DEVICES</p><h1>Filament storage</h1>
-      <p className="subtitle">{devices ? `${devices.length} ${devices.length === 1 ? "box" : "boxes"} · ${error ? "status unavailable" : `${onlineCount} online`}` : "Connecting to your boxes…"}</p></div>
-      <nav className="cloudlinks" aria-label="nRF Cloud">
+    <nav className="section-nav" aria-label="Dashboard">
+      {[["monitor","Monitor"],["devices","Devices"],["settings","Settings"]].map(([id,label]) =>
+        <button key={id} aria-current={tab === id ? "page" : undefined} onClick={() => navigate(id)}>{label}</button>)}
+    </nav>
+    <div className="titlebar">
+      <div><h1>{tab === "monitor" ? "Filament storage" : tab === "devices" ? "Your boxes" : "Settings"}</h1>
+        {tab !== "settings" && devices && <p className="subtitle">{devices.length} {devices.length === 1 ? "box" : "boxes"} · {error ? "status unavailable" : onlineCount + " online"}</p>}
+      </div>
+      {tab !== "settings" && !adding && <button className="primary-action" onClick={add}>+ Add device</button>}
+    </div>
+    {error && <div className="notice" role="alert">{error}<button onClick={reload}>Retry</button></div>}
+    {tab !== "settings" && !devices && !error && !adding && <p role="status">Loading your boxes…</p>}
+    {tab !== "settings" && devices?.length === 0 && !error && !adding && <section className="empty-state">
+      <h2>No boxes yet</h2><p>Add a box to see its readings here.</p>
+    </section>}
+    {adding && <AddBox onClose={() => setAdding(false)} />}
+    {tab === "monitor" && selected && <>
+      {devices.length > 1 && <button className="textbutton back" onClick={() => setSelectedSlot(null)}>← All boxes</button>}
+      <Box key={selected.serial} data={selected} networkError={!!error} now={now} reload={reload}
+        openSettings={() => select(selected,{edit:true})} />
+    </>}
+    {tab === "monitor" && !selected && devices?.length > 0 && <section className="overview" aria-label="Boxes">
+      {devices.map(box => {
+        const state = boxStatus(box, now, error);
+        const live = state === "Online";
+        const guidance = live && storageGuidance(box.spool?.material, box.humidity);
+        return <button type="button" key={box.serial} className="summary-card box" onClick={() => select(box)}>
+          <strong>{box.label}</strong><span className={"state" + (live ? " active" : "")}><i />{state}</span>
+          <span className="summary-reading">{Number.isFinite(box.humidity) ? `${box.humidity.toFixed(1)}% RH` : "No humidity reading"}</span>
+          {guidance?.above && <span className="summary-alert">Above recommended humidity</span>}
+          {!live && Number.isFinite(box.humidity) && <small>Last recorded</small>}
+        </button>;
+      })}
+    </section>}
+    {tab === "devices" && editing && selected && <>
+      <button className="textbutton back" onClick={() => setEditing(false)}>← Your boxes</button>
+      <DeviceSettings key={selected.serial} box={selected} reload={reload} />
+    </>}
+    {tab === "devices" && !adding && !editing && devices?.length > 0 && <ul className="managed-boxes box">
+      {devices.map(box => <li key={box.serial}>
+        <div><strong>{box.label}</strong><small>{boxStatus(box, now, error)}</small></div>
+        <button className="textbutton" onClick={() => select(box,{edit:true})} aria-label={`Settings for ${box.label}`}>Settings</button>
+      </li>)}
+    </ul>}
+    {tab === "settings" && <section className="box settings-panel">
+      <h2>Account</h2><p>{account.email}</p>
+      <button className="primary-action" onClick={async () => {
+        setAccountError("");
+        try { await signOut(); } catch (err) { setAccountError(err.message); }
+      }}>Sign out</button>
+      {accountError && <p role="alert">{accountError}</p>}
+      <nav className="cloudlinks settings-section" aria-label="Team cloud tools">
         <a href={metricsUrl} target="_blank" rel="noopener noreferrer">Metrics history ↗</a>
         <a href={releasesUrl} target="_blank" rel="noopener noreferrer">Firmware releases ↗</a>
       </nav>
-    </div>
-    {error && <div className="notice" role="alert">{error}<button onClick={reload}>Retry</button></div>}
-    {discoveryWarning && !error && <p className="notice" role="status">{discoveryWarning}</p>}
-    {!devices && !error && <p role="status">Connecting to the cloud…</p>}
-    {devices?.length === 0 && !error && !discoveryWarning && <section className="empty-state" role="status">
-      <h2>No boxes yet</h2><p>Power a DrySpool box, connect it to Wi-Fi, and register it in the same nRF Cloud project. It will appear here after its first report.</p>
-      <a href="https://github.com/ese5180/f26-t06-dry-spool/blob/feature/mvp-firmware-sirui/firmware/README.md" target="_blank" rel="noopener noreferrer">Team setup guide ↗</a>
     </section>}
-    {devices?.length > 0 && selected && <div className="dashboard-layout">
-      <aside className="device-list" aria-label="Choose a box">
-        <div className="list-heading"><h2>Boxes</h2><span>{devices.length}</span></div>
-        <div className="device-switcher">
-          {devices.map((d, index) => {
-            const live = !error && !d.error && d.online && d.ts > now - controlAge;
-            return <button key={d.serial + "/" + d.slot} type="button" className={"device-choice" + (d.slot === selectedSlot ? " selected" : "")}
-              aria-current={d.slot === selectedSlot ? "true" : undefined} onClick={() => setSelectedSlot(d.slot)}>
-              <span className="device-index">{String(index + 1).padStart(2, "0")}</span>
-              <span className="device-choice-label"><strong>{d.label}</strong><small>{live ? "Online" : "Offline or waiting"}</small></span>
-              <span className={"choice-dot" + (live ? " live" : "")} aria-hidden="true" />
-            </button>;
-          })}
-        </div>
-      </aside>
-      <section className="detail" aria-label="Selected box">
-        <Box key={selected.serial + "/" + selected.slot} data={selected} networkError={!!error} now={now} reload={reload} />
-      </section>
-    </div>}
   </main>;
 }

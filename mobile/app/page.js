@@ -1,5 +1,5 @@
-import Dashboard from "./dashboard";
+import AccountGate from "./account-gate";
 
 export default function Page() {
-  return <Dashboard />;
+  return <AccountGate />;
 }
