@@ -1,0 +1,9 @@
+# Keep the NCS 3.4 wire format for personal Wi-Fi setup. Omit the unused
+# enterprise configuration from the decoder so its certificate buffers
+# do not consume more than 15 KB on the BLE receive stack.
+WifiInfo.ssid max_size:32
+WifiInfo.bssid max_size:6
+WifiConfig.passphrase max_size:64
+WifiConfig.certs type:FT_IGNORE
+ConnectionInfo.ip4_addr max_size:4
+Info.version int_size:IS_8

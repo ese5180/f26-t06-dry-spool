@@ -16,6 +16,7 @@
 
 #include "cloud/cloud_session.h"
 #include "telemetry.h"
+#include "setup/provisioning.h"
 #if defined(CONFIG_SAMPLE_MEMFAULT_BUTTONS)
 #include "diagnostics/memfault_buttons.h"
 #endif
@@ -138,6 +139,11 @@ static void cloud_worker(void *a, void *b, void *c)
 	while (!k_event_test(&events, REBOOT_PENDING)) {
 		if (!k_event_wait(&events, LINK_UP, false, RETRY)) {
 			/* Also recover from a missing AP or missing Wi-Fi profile at boot. */
+#ifdef CONFIG_DRYSPOOL_BLE_SETUP
+			if (dryspool_setup_active()) {
+				continue;
+			}
+#endif
 			conn_mgr_all_if_connect(true);
 			continue;
 		}

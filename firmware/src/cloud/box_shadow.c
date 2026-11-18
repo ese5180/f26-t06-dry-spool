@@ -9,6 +9,7 @@
 
 #include "telemetry.h"
 #include "ota/memfault_update.h"
+#include "setup/provisioning.h"
 
 /* One cloud worker owns the JSON buffer and the unacknowledged command. */
 static char buffer[4097];
@@ -81,6 +82,17 @@ static int receive_command(void)
 
 int dryspool_shadow_sync(void)
 {
+#ifdef CONFIG_DRYSPOOL_BLE_SETUP
+	char proof[DRYSPOOL_PROOF_SIZE];
+	if (dryspool_setup_proof(proof)) {
+		snprintf(buffer, sizeof(buffer), "{\"dryspool_claim\":{\"proof\":\"%s\"}}", proof);
+		int claim_rc = nrf_cloud_coap_shadow_state_update(buffer);
+		if (claim_rc) {
+			return claim_rc;
+		}
+		dryspool_setup_reported(proof);
+	}
+#endif
 	int rc = receive_command();
 	if (rc) {
 		return rc;

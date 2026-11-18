@@ -26,7 +26,7 @@ export function scanRequest() {
   return request({op:SCAN});
 }
 
-const supportedPersonal = new Set([2,3,4,6,8,9,10,13]);
+const supportedPersonal = new Set([3,4,6,8,9,10,13]);
 export const networkNeedsPassword = network => supportedPersonal.has(network.auth);
 
 export function setupRequest(network, password) {

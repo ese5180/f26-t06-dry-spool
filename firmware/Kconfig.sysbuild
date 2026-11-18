@@ -16,3 +16,10 @@ choice BOOTLOADER
 endchoice
 
 source "share/sysbuild/Kconfig"
+
+config DRYSPOOL_BLE_SETUP
+	bool "Build the DrySpool Bluetooth setup profile"
+	depends on BOARD_NRF7002DK_NRF5340_CPUAPP_NS
+
+config NRF_DEFAULT_IPC_RADIO
+	default y if DRYSPOOL_BLE_SETUP

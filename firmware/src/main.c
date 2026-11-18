@@ -8,6 +8,7 @@
 #include "spool/profile.h"
 #include "readings.h"
 #include "sensors/scale.h"
+#include "setup/provisioning.h"
 #ifdef CONFIG_SAMPLE_MEMFAULT_FOTA
 #include "ota/trial_image.h"
 #endif
@@ -81,6 +82,12 @@ int main(void)
 	}
 #ifdef CONFIG_SAMPLE_MEMFAULT_FOTA
 	trial_image_init();
+#endif
+#ifdef CONFIG_DRYSPOOL_BLE_SETUP
+	int setup_rc = dryspool_setup_init();
+	if (setup_rc) {
+		LOG_ERR("Bluetooth setup unavailable: %d", setup_rc);
+	}
 #endif
 	for (;;) {
 		struct dryspool_sample sample = {0};

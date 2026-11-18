@@ -97,7 +97,7 @@ Open the application core’s USB virtual serial port at **115200 baud, 8N1**. T
 
 ## Connect to Wi-Fi and nRF Cloud
 
-At 115200 baud, reset each DK and record its `Device Wi-Fi MAC` for network registration and its `nRF Cloud device ID` to identify its automatically discovered dashboard card. The J-Link serial selects the USB debugger. Each DK has its own TLS credentials. For a new certificate set `--id-str` to the device ID printed by this DK when running the installer. For a previously onboarded DK, check its existing connection first. For a new board, follow step 4 of the team guide to install the board’s credentials through the application UART using `tls_cred_shell` and register the device in the team’s nRF Cloud project. Keep certificates, private keys, Wi-Fi passwords, and release tokens in restricted local storage. [Device onboarding instructions](../docs/TEAM_SETUP_AND_DEMO.md#4-add-a-new-dk-to-nrf-cloud)
+At 115200 baud, reset each DK and record its `Device Wi-Fi MAC` for network registration and its `nRF Cloud device ID` to identify the box. The J-Link serial selects the USB debugger. Each DK has its own TLS credentials. For a new certificate set `--id-str` to the device ID printed by this DK when running the installer. For a previously onboarded DK, check its existing connection first. For a new board, follow step 4 of the team guide to install the board’s credentials through the application UART using `tls_cred_shell` and register the device in the team’s nRF Cloud project. Keep certificates, private keys, Wi-Fi passwords, and release tokens in restricted local storage. [Device onboarding instructions](../docs/TEAM_SETUP_AND_DEMO.md#4-add-a-new-dk-to-nrf-cloud)
 
 Save a WPA2-Personal network and connect from the application shell:
 
@@ -105,6 +105,36 @@ Save a WPA2-Personal network and connect from the application shell:
 wifi cred add -s YOUR_SSID -k 1 -p YOUR_PASSWORD
 wifi cred auto_connect
 ```
+
+## Bluetooth setup
+
+With NCS v3.4.0, opt in to the BLE setup profile when building the signed image.
+Use the [same-drive build requirements](#build-flash-and-open-the-serial-shell)
+and team signing key from the normal Wi-Fi firmware.
+
+```powershell
+$dryspoolLocalConfig = (Resolve-Path firmware/local.conf).Path.Replace('\', '/')
+west build -p always --sysbuild -b nrf7002dk/nrf5340/cpuapp/ns `
+  -d build-ble-box firmware -- "-DEXTRA_CONF_FILE=$dryspoolLocalConfig" -DSB_CONFIG_DRYSPOOL_BLE_SETUP=y
+west flash --no-rebuild -d build-ble-box --dev-id JLINK_SERIAL
+```
+
+The BLE build adds the nRF5340 network core's IPC Radio image. Flash by J-Link
+for the first installation. Keep the existing page layout and signing key.
+This profile uses IPv4 and home Wi-Fi with modern encryption. It keeps the
+application and credential commands, and removes generic SDK shell tools. The
+provisioning decoder omits enterprise certificate buffers to reduce stack use.
+Use the DK's second user button (`sw1`) for Setup. A box with no saved Wi-Fi
+opens setup at boot. A configured box opens it after a button press. After
+the phone connects, press Setup again to allow that connection to configure
+Wi-Fi. The second LED marks the setup window. The window expires automatically.
+
+Follow the [phone setup guide](../setup-app/README.md#first-box). The radio
+uses Nordic's provisioning service. Its control point only accepts writes
+after physical confirmation. Keep BLE debug logs disabled because the Nordic
+transport can include request bytes at debug level. The box reports only a
+claim hash through its certificate-authenticated nRF Cloud session. The
+serial Wi-Fi credential commands remain available for bench use.
 
 After clock sync and cloud connection the board exchanges its dashboard shadow approximately every 5 seconds. The sensor history telemetry runs every 60 seconds by default. Check the device’s messages in nRF Cloud. Each report includes the currently valid channels. Raw NAU7802 counts are available before scale calibration. During an outage the board keeps only the latest sample in RAM. Reconnection resumes with fresh readings without replaying an outage history.
 
