@@ -1,7 +1,40 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { PGlite } from '@electric-sql/pglite';
+import { Ownership } from '../lib/ownership.mjs';
+
+test('a claim requires its account and matching proof in the device reported shadow', async () => {
+  const account = 'owner-a';
+  const serial = 'bound-device';
+  const proof = createHash('sha256').update('local test credential').digest('hex');
+  const id = '11a99927-2389-4f5d-8958-b955a9842faa';
+  const entry = {id,serial,token_hash:proof,expires_at:new Date(Date.now()+60_000).toISOString()};
+  const filters = new Map();
+  let finishes = 0;
+  const store = new Ownership({
+    from:() => ({
+      select(){return this;},
+      eq(key,value){filters.set(key,value);return this;},
+      maybeSingle(){return {data:entry};},
+    }),
+    rpc(_name,args) {
+      assert.deepEqual(args,{p_user:account,p_id:id,p_hash:proof});
+      finishes++;
+      return {data:'added'};
+    },
+  },account);
+  const shadow = value => async selected => {
+    assert.equal(selected,serial);
+    return value;
+  };
+  assert.deepEqual(await store.check(id,shadow({desired:{dryspool_claim:{proof}}})),{status:'waiting'});
+  assert.deepEqual(await store.check(id,shadow({reported:{dryspool_claim:{proof:'f'.repeat(64)}}})),{status:'waiting'});
+  assert.deepEqual(await store.check(id,shadow({reported:{dryspool_claim:{proof}}})),{status:'added',serial});
+  assert.equal(finishes,1);
+  assert.equal(filters.get('user_id'),account);
+});
 
 test('PostgreSQL grants one owner and rejects the wrong proof or an expired attempt', async t => {
   const db = new PGlite();

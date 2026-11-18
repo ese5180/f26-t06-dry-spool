@@ -35,23 +35,7 @@ main { max-width: 1180px; margin: auto; padding: max(16px,env(safe-area-inset-to
 h1, h2, h3, p { margin-top: 0 }
 h1 { font-size: clamp(29px,4.2vw,44px); letter-spacing: -.055em; line-height: 1.17; margin: 0 }
 .titlebar a { color: var(--pine); font-size: 14px; font-weight: 580; padding: 10px 0; text-decoration: none }
-.dashboard-layout { display: grid; grid-template-columns: minmax(210px, 280px) minmax(0, 1fr); gap: 24px; align-items: start }
-.device-list { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px }
-.list-heading, .device-choice, .section-title { display: flex; align-items: center; justify-content: space-between; gap: 12px }
-.list-heading { padding: 4px 6px 14px; border-bottom: 1px solid var(--line) }
-.list-heading h2 { font-size: 16px }
-.list-heading span { color: var(--muted); font: 13px var(--mono) }
-.device-switcher { max-height: min(70vh, 680px); overflow-y: auto; padding-top: 8px }
-.device-choice { width: 100%; min-height: 66px; border: 1px solid transparent; background: transparent; text-align: left; border-radius: 11px; padding: 10px; color: var(--ink) }
-.device-choice:hover { background: #f3f5ea }
-.device-choice.selected { background: #edf3de; border-color: #c4d9aa }
-.device-index { color: #8a9e8c; font: 12px var(--mono) }
-.device-choice-label { flex: 1; min-width: 0; display: grid; gap: 4px }
-.device-choice-label strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px }
-.device-choice-label small { color: var(--muted); font-size: 12px }
-.choice-dot { width: 8px; height: 8px; border-radius: 50%; background: #a8b1a9; flex: none }
-.choice-dot.live { background: #4e892e }
-.detail { min-width: 0 }
+.section-title { display: flex; align-items: center; justify-content: space-between; gap: 12px }
 .empty-state { border: 1px dashed #a8b8a6; border-radius: 16px; background: var(--surface); padding: 40px; max-width: 680px; line-height: 1.6 }
 .empty-state p { color: var(--muted) }
 .empty-state a, .source-note a { color: var(--pine) }
@@ -88,7 +72,6 @@ h3 { font-size: 16px; margin: 0 }
 .segments button:enabled:hover { box-shadow: inset 0 0 0 1px #75926e }
 .segments button:disabled { opacity: .62 }
 .feedback { font-size: 13px; line-height: 1.55; color: var(--pine); margin: 10px 0 0 }
-.box footer { margin-top: 15px; font-size: 12px; font-variant-numeric: tabular-nums }
 .firmware { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--line) }
 .firmware dd { font-family: inherit; font-size: 14px; line-height: 1.4; letter-spacing: normal; overflow-wrap: anywhere }
 .notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff1d5; color: #643e11; border: 1px solid #d4b885; border-radius: 8px; padding: 8px 14px; margin-bottom: 16px; font-size: 14px }
@@ -124,10 +107,6 @@ h3 { font-size: 16px; margin: 0 }
 .cloudlinks a, .settings-section a { color: var(--pine) }
 @media (max-width: 670px) {
   main { padding-left: max(16px,env(safe-area-inset-left)); padding-right: max(16px,env(safe-area-inset-right)) }
-  .dashboard-layout { grid-template-columns: 1fr; gap: 15px }
-  .device-list { padding: 10px }
-  .device-switcher { display: flex; gap: 8px; overflow-x: auto; max-height: none; padding: 8px 0 2px }
-  .device-choice { min-width: 180px; width: 180px }
   .titlebar { flex-wrap: wrap; margin: 26px 0 16px }
   .box { padding: 18px }
   .empty-state { padding: 22px }

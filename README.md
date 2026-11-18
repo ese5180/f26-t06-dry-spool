@@ -17,7 +17,8 @@
 | Location | What to find there |
 | --- | --- |
 | [firmware/](firmware/README.md) | Zephyr application for the nRF7002 DK, with offline and connected build profiles |
-| [mobile/](mobile/README.md) | Phone dashboard, local development, and deployment |
+| [mobile/](mobile/README.md) | Account backend, device ownership, and web Dashboard |
+| [setup-app/](setup-app/README.md) | iOS and Android app for Bluetooth setup |
 | [docs/](docs/TEAM_SETUP_AND_DEMO.md) | Team setup, provisioning, release, and demo guide |
 | [docs/history/](docs/history/COURSE_EVIDENCE.md) | Course evidence for wireless updates and fleet management, including the [original demo report](docs/history/IoT%20Venture%20-%20Wireless%20Demo%20%26%20Secure%20Firmware%20Updates.pdf) |
 

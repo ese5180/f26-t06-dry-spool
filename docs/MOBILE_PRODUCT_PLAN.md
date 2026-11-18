@@ -1,32 +1,21 @@
 # Mobile product path
 
-The current dashboard is a **shared project prototype**. It reads devices from one
-nRF Cloud project through a server token. It has no user accounts, no device
-claiming, and no NFC reader. The UI now lists the boxes that actually belong to
-the project, permits switching between any number of them, and marks old data
-as historical. Do not present the shared project view as a private user account.
-The navigation follows the familiar multi-device list and selected-device
-detail pattern used by [Prusa Connect](https://help.prusa3d.com/article/prusa-connect-and-prusalink-explained_302608),
-while the reserved material area follows the separation between device status
-and spool data in the [Prusa mobile app](https://help.prusa3d.com/article/prusa-mobile-app_735711).
+The branch implements user accounts and device claims. The web Dashboard reads
+only the signed-in user's boxes. The phone app handles first setup over BLE. The
+older deployed prototype still has a shared project view until the new backend
+is configured and deployed. See the [web guide](../mobile/README.md) and the
+[phone guide](../setup-app/README.md).
 
 ## Account and first setup
 
-For a user product, add a backend identity and device ownership model before
-public rollout. A user signs in, creates a household or workspace, and claims
-a device using a one-time code or QR code that proves physical possession.
-The server binds the hardware serial to that account, checks ownership on every
-read and fan command, and handles transfer/reset without exposing nRF Cloud
-organization credentials in the browser. Test two-account isolation, duplicate
-claims, revoked access, and sharing. A URL alone must not grant fan control.
-
-An assisted first-run sequence should show: (1) power the box, (2) join Wi-Fi,
-(3) claim it, (4) wait for a first environmental sample, (5) calibrate the
-scale and set empty-spool mass if installed, and (6) verify fan rotation if
-fan hardware is installed. Each step must distinguish waiting, failed, and
-complete. Current firmware onboarding uses serial commands and cloud
-registration, so a self-service setup screen must wait for a supported
-provisioning and claim protocol.
+Users sign in, select a nearby box in DrySpool Setup, confirm with the box's
+button, and select their Wi-Fi. A short-lived claim travels from the app to the
+box. The backend checks the corresponding proof in the device's authenticated
+nRF Cloud shadow before recording ownership. The web UI uses the device overview,
+details and settings pattern from the
+[Tapo T315 guide](https://static.tp-link.com/upload/manual/2023/202303/20230316/1910013360_Tapo%20T315_UG_V1.pdf#page=11).
+Sharing, transfer and account recovery for an already claimed box require a
+separate workflow. Changing Wi-Fi does not release ownership.
 
 ## Data and device states
 
