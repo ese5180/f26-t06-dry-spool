@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { command, device, deviceId, fleet, inventory, readShadow } from '../lib/cloud.mjs';
+import { commandSerial, device, ownedFleet, readShadow } from '../lib/cloud.mjs';
 import { input } from '../lib/http.mjs';
 import { storageGuidance } from '../lib/storage.mjs';
 import { GET } from '../app/api/devices/route.js';
 import { POST } from '../app/api/[slot]/fan/route.js';
+import { GET as detail, PATCH as rename } from '../app/api/devices/[serial]/route.js';
 
 const now = 1800000000000;
 function sample(ts = now) {
@@ -23,20 +24,7 @@ test('fresh, valid sensor data and protocol are required for live control', () =
   s.reported.dryspool.fan_api=0;
   assert.equal(device('A',s,now).control,false);
 });
-test('configured aliases do not create boxes without matching DrySpool data', async () => {
-  const env={NRF_DEVICE_A:'id-A',NRF_DEVICE_B:'id-B',NRF_DEVICE_C:'id-C'};
-  assert.equal(deviceId('C',env),'id-C');
-  assert.throws(()=>deviceId('C',{...env,NRF_DEVICE_C:'id-a'}),{status:503});
-  assert.throws(()=>deviceId('C',{...env,NRF_DEVICE_C:''}),{status:503});
-  Object.assign(process.env,env);
-  const {rows:boxes, warning}=await fleet(async()=>{throw Error();},async id=>{
-    if(id==='id-B') throw Error();
-    return sample(Date.now());
-  });
-  assert.ok(warning);
-  assert.deepEqual(boxes.map(b=>[b.slot,b.control]),[['A',true],['C',true]]);
-});
-test('C gets its own state URL and acknowledgement; stale commands expire', async () => {
+test('the selected serial gets the command and acknowledgment; stale commands expire', async () => {
   const s=sample();
   Object.assign(process.env,{NRF_ORG:'test',NRF_PROJECT:'test',NRF_DEVICE_A:'a',NRF_DEVICE_B:'b',NRF_DEVICE_C:'c',DRYSPOOL_OAT:'test-only'});
   const calls=[];
@@ -46,43 +34,61 @@ test('C gets its own state URL and acknowledgement; stale commands expire', asyn
     s.desired=JSON.parse(options.body).desired;
     return new Response(null,{status:202});
   });
-  const {request}=await command('C','off',call,()=>now);
+  const {request}=await commandSerial('c','off',call,()=>now);
   assert.ok(calls.every(([url])=>url.endsWith('/devices/c/state')));
   assert.deepEqual(calls.map(x=>x[1]),['GET','PATCH']);
   assert.equal(s.desired.config.fan.request,request);
   assert.ok(device('C',s,now).pending);
-  await assert.rejects(command('C','on',call,()=>now),{status:409});
+  await assert.rejects(commandSerial('c','on',call,()=>now),{status:409});
   assert.equal(device('C',s,now+46000).pending,false);
   s.reported.config={fan:{...s.desired.config.fan}};
   assert.equal(device('C',s,now).pending,false);
-  await assert.rejects(command('D','on',call,()=>now),{status:404});
 });
-test('dashboard works without a session and only operates a ready fan', async t => {
+test('device routes scope reads, settings and fan commands to the authenticated account', async t => {
+  const shadows = [];
   const writes = [];
-  Object.assign(process.env,{NRF_ORG:'test',NRF_PROJECT:'test',NRF_DEVICE_A:'a',NRF_DEVICE_B:'b',NRF_DEVICE_C:'c',DRYSPOOL_OAT:'test-only'});
-  t.mock.method(globalThis, 'fetch', async (url, options) => {
-    if (url.includes('/devices?')) return Response.json({data:[
-      {device_serial:'b'}, {device_serial:'new-box',nickname:'Workshop'}, {device_serial:'other'}
-    ],paging:{page:1,page_count:1}});
-    if (url.endsWith('/other/state')) return Response.json({reported:{}});
-    if (options.method === 'GET') return Response.json(sample(url.endsWith('/c/state') ? 0 : Date.now()));
-    writes.push(url);
+  Object.assign(process.env,{NRF_ORG:'test',NRF_PROJECT:'test',DRYSPOOL_OAT:'test-only',
+    SUPABASE_URL:'https://accounts.example.test', SUPABASE_PUBLISHABLE_KEY:'testing',
+    SUPABASE_SERVICE_ROLE_KEY:'test-service-only'});
+  t.mock.method(globalThis, 'fetch', async (target, options) => {
+    const url = new URL(target.toString());
+    if (url.pathname === '/auth/v1/user') {
+      const name = new Headers(options.headers).get('authorization')?.split(' ')[1];
+      return ['alice','bob'].includes(name) ? Response.json({id:name,email:name+'@example.test'})
+        : Response.json({msg:'Forbidden'},{status:401});
+    }
+    if (url.pathname === '/rest/v1/dryspool_devices') {
+      const name = url.searchParams.get('owner_id')?.slice(3);
+      assert.ok(['alice','bob'].includes(name), 'every query must filter the authenticated owner');
+      const box = {serial:name+'-box',label:name+' workshop'};
+      const filter = url.searchParams.get('serial');
+      return Response.json(!filter || filter === 'eq.' + box.serial ? [box] : []);
+    }
+    shadows.push(url.pathname);
+    if (options.method === 'GET') return Response.json(sample(Date.now()));
+    writes.push(url.pathname);
     return new Response(null, {status:202});
   });
-  const list = await GET(new Request('https://example.test/api/devices'));
-  assert.equal(list.status,200);
-  const rows=await list.json();
-  assert.deepEqual(rows.map(d=>d.slot),['B','id-new-box']);
-  assert.equal(rows.at(-1).label,'Workshop');
-  const request = slot => new Request('https://example.test/api/' + slot + '/fan',{method:'POST',
-    headers:{origin:'https://example.test','content-type':'application/json'},body:'{"mode":"auto"}'});
-  for (const [slot, status] of [['C',409],['B',202],['id-new-box',202],['id-unlisted',404],['id-other',409],['id-b',404]]) {
-    const response = await POST(request(slot),{params:Promise.resolve({slot})});
-    assert.equal(response.status,status);
+  const request = (path, token, method = 'GET', body) => new Request('https://example.test' + path,{
+    method, headers:{authorization:'Bearer '+token,'content-type':'application/json'},
+    body:body && JSON.stringify(body),
+  });
+  for (const name of ['alice','bob']) {
+    const list = await GET(request('/api/devices',name));
+    assert.equal(list.status,200);
+    assert.deepEqual((await list.json()).map(d=>d.serial),[name+'-box']);
   }
-  assert.equal(writes.length,2);
-  assert.ok(writes[1].endsWith('/new-box/state'));
-  assert.ok(writes[0].endsWith('/b/state'));
+  assert.equal((await GET(request('/api/devices','invalid'))).status,401);
+  const bob = {params:Promise.resolve({serial:'bob-box'})};
+  const before = shadows.length;
+  assert.equal((await detail(request('/api/devices/bob-box','alice'),bob)).status,404);
+  assert.equal((await rename(request('/api/devices/bob-box','alice','PATCH',{label:'other'}),bob)).status,404);
+  assert.equal((await POST(request('/api/id-bob-box/fan','alice','POST',{mode:'auto'}),
+    {params:Promise.resolve({slot:'id-bob-box'})})).status,404);
+  assert.equal(shadows.length,before);
+  assert.equal((await POST(request('/api/id-alice-box/fan','alice','POST',{mode:'auto'}),
+    {params:Promise.resolve({slot:'id-alice-box'})})).status,202);
+  assert.deepEqual(writes,['/v1/organizations/test/projects/test/long-range/devices/alice-box/state']);
 });
 test('mutating endpoints require same-origin JSON', async () => {
   const url='https://example.test/api/A/fan';
@@ -98,38 +104,21 @@ test('browser origin is matched against the public Host behind the Next listener
   assert.deepEqual(await input(req),{mode:'on'});
 });
 
-test('inventory follows cloud pagination and deduplicates device IDs', async () => {
-  Object.assign(process.env,{NRF_ORG:'test',NRF_PROJECT:'test',DRYSPOOL_OAT:'test-only'});
-  const records=await inventory(async url=>{
-    const page=Number(new URL(url).searchParams.get('page'));
-    assert.ok(page===1 || page===2);
-    const ids=page===1 ? ['old','shared'] : ['shared','new'];
-    return Response.json({paging:{page,page_count:2},data:ids.map(device_serial=>({device_serial}))});
-  });
-  assert.deepEqual([...records.keys()],['old','shared','new']);
-});
-
-test('a known DrySpool box stays visible offline and a new shadow is discovered on refresh', async () => {
-  const records=new Map([['old',{device_serial:'old',last_seen_software_version:{software_type:{name:'dryspool-app'}}}],
-    ['new',{device_serial:'new'}]]);
-  const list=async()=>records;
-  const before=await fleet(list,async()=>({}));
-  assert.equal(before.rows.find(d=>d.serial==='old').control,false);
-  assert.ok(!before.rows.some(d=>d.serial==='new'));
-  const after=await fleet(list,async id=>id==='new'?sample(Date.now()):{});
-  assert.equal(after.rows.find(d=>d.serial==='new').control,true);
-});
-
-test('fleet supports one or ten actual boxes without fixed placeholder cards', async () => {
-  Object.assign(process.env,{NRF_DEVICE_A:'unused-a',NRF_DEVICE_B:'unused-b',NRF_DEVICE_C:'unused-c'});
-  const makeRecords = count => new Map(Array.from({length:count}, (_, i) => {
-    const id = 'device-' + i;
-    return [id,{device_serial:id,last_seen_software_version:{software_type:{name:'dryspool-wifi-box'}}}];
-  }));
-  for (const count of [1, 10]) {
-    const {rows} = await fleet(async()=>makeRecords(count),async()=>sample(Date.now()));
+test('owned fleet supports zero, one, and ten boxes, including failed and missing shadows', async () => {
+  for (const count of [0, 1, 10]) {
+    const boxes = Array.from({length:count},(_,i)=>({serial:'box-'+i,label:'Box '+i}));
+    const rows = await ownedFleet(boxes,async serial => {
+      if (serial==='box-1') throw Error();
+      return serial==='box-2' ? {} : sample(Date.now());
+    });
     assert.equal(rows.length,count);
     assert.equal(new Set(rows.map(row=>row.serial)).size,count);
+    if (count===10) {
+      assert.equal(rows[0].control,true);
+      assert.equal(rows[1].control,false);
+      assert.ok(rows[1].error);
+      assert.equal(rows[2].ts,0);
+    }
   }
 });
 

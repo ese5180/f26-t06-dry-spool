@@ -1,7 +1,11 @@
-import { input, json, route } from '../../../../lib/http.mjs';
-import { command } from '../../../../lib/cloud.mjs';
+import { ApiError, apiInput, json, route } from '../../../../lib/http.mjs';
+import { commandSerial } from '../../../../lib/cloud.mjs';
+import { ownedDevices } from '../../../../lib/request-user.mjs';
 export const POST = route(async (req, context) => {
-  const { mode } = await input(req);
+  const store = await ownedDevices(req);
+  const { mode } = await apiInput(req);
   const { slot } = await context.params;
-  return json(await command(slot, mode), 202);
+  if (!slot.startsWith('id-')) throw new ApiError(404, 'Box not found.');
+  const {serial} = await store.require(slot.slice(3));
+  return json(await commandSerial(serial, mode), 202);
 });
