@@ -6,6 +6,7 @@ import { storageGuidance } from '../lib/storage.mjs';
 import { GET } from '../app/api/devices/route.js';
 import { POST } from '../app/api/[slot]/fan/route.js';
 import { GET as detail, PATCH as rename } from '../app/api/devices/[serial]/route.js';
+import { PUT as editFilament } from '../app/api/devices/[serial]/filament/route.js';
 
 const now = 1800000000000;
 function sample(ts = now) {
@@ -83,6 +84,8 @@ test('device routes scope reads, settings and fan commands to the authenticated 
   const before = shadows.length;
   assert.equal((await detail(request('/api/devices/bob-box','alice'),bob)).status,404);
   assert.equal((await rename(request('/api/devices/bob-box','alice','PATCH',{label:'other'}),bob)).status,404);
+  assert.equal((await editFilament(request('/api/devices/bob-box/filament','alice','PUT',
+    {profile:{material:'PETG',color:'Blue'}}),bob)).status,404);
   assert.equal((await POST(request('/api/id-bob-box/fan','alice','POST',{mode:'auto'}),
     {params:Promise.resolve({slot:'id-bob-box'})})).status,404);
   assert.equal(shadows.length,before);

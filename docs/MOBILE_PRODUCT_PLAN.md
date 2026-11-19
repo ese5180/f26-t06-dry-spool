@@ -2,9 +2,17 @@
 
 The branch implements user accounts and device claims. The web Dashboard reads
 only the signed-in user's boxes. The phone app handles first setup over BLE. The
-older deployed prototype still has a shared project view until the new backend
-is configured and deployed. See the [web guide](../mobile/README.md) and the
-[phone guide](../setup-app/README.md).
+deployed demo now uses account-scoped device ownership at
+https://dryspool-ta-demo.vercel.app/. See the [web guide](../mobile/README.md)
+and the [phone guide](../setup-app/README.md).
+
+The web interface includes the Carbon theme, device switching, account recovery,
+and per-box manual material/color editing. The native Setup app is an existing
+Expo/React Native implementation, not yet a verified iPhone onboarding release.
+Nordic's iPhone provisioner has verified Wi-Fi setup and persistence through a
+DK reboot; that does not validate the DrySpool app's complete account-claim flow.
+Complete native signing, installation, BLE and claim testing on a real iPhone
+before publishing an app installation link.
 
 ## Account and first setup
 
@@ -58,7 +66,9 @@ does not establish trustworthy material. See [firmware integration points](NFC_I
 ## Storage guidance
 
 The dashboard currently provides a material-specific **maximum relative
-humidity** only after a validated material is reported. The reference is
+humidity** for supported reported or manually saved materials. A manual profile
+is saved separately in `desired.config.filament`, explicitly labeled, and remains
+visible offline. Humidity comparisons require fresh sensor data. The reference is
 [Prusa USS Drybox guidance](https://help.prusa3d.com/article/prusa-uss-drybox_1014382):
 
 | Material | Recommended in-box RH |

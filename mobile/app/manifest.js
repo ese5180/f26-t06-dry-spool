@@ -6,12 +6,11 @@ export default function manifest() {
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#f5f3ed",
-    theme_color: "#f5f3ed",
+    background_color: "#171b1c",
+    theme_color: "#171b1c",
     lang: "en-US",
     icons: [
-      { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+      { src: "/icon-carbon.png", sizes: "1254x1254", type: "image/png", purpose: "any maskable" },
     ],
   };
 }

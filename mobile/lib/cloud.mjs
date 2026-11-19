@@ -1,6 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { ApiError } from './http.mjs';
 import { validSerial } from './ownership.mjs';
+import { filamentProfile, savedFilament } from './filament.mjs';
 
 const modes = ['auto', 'on', 'off'];
 const phases = ['checking', 'transferring', 'restarting', 'idle', 'failed'];
@@ -16,12 +17,14 @@ export function device(slot, shadow, now = Date.now()) {
     !(ack?.request === desired.request && ack.mode === desired.mode && ack.expires === desired.expires));
   const env = sample.env_valid === true;
   const fan = sample.fan_valid === true && typeof sample.fan_on === 'boolean' ? sample.fan_on : null;
-  const spool = sample.spool_valid === true && sample.spool && typeof sample.spool === 'object' ? {
+  const reportedSpool = sample.spool_valid === true && sample.spool && typeof sample.spool === 'object' ? {
     material: typeof sample.spool.material === 'string' ? sample.spool.material.slice(0, 40) : null,
     color: typeof sample.spool.color === 'string' ? sample.spool.color.slice(0, 80) : null,
     brand: typeof sample.spool.brand === 'string' ? sample.spool.brand.slice(0, 80) : null,
     source: sample.spool.source === 'openprinttag' ? 'openprinttag' : 'manual',
   } : null;
+  const manualSpool = savedFilament(shadow.desired?.config?.filament);
+  const spool = manualSpool || reportedSpool;
   return {
     slot, device: 'DrySpool ' + slot, ts, online, pending, desired: desired?.mode ?? null,
     desiredId: desired?.request ?? null,
@@ -34,6 +37,13 @@ export function device(slot, shadow, now = Date.now()) {
     request: Number.isInteger(sample.request) ? sample.request : null,
     control: online && sample.fan_api === 1 && fan !== null
   };
+}
+
+export async function saveFilament(id, value, read = readShadow, clock = Date.now) {
+  const profile = {...filamentProfile(value), source: 'manual', version: 1, updatedMs: clock()};
+  // Merge only metadata; never replace fan commands or reported sensor state.
+  await read(id, {desired: {config: {filament: profile}}});
+  return profile;
 }
 
 async function cloudRequest(path, patch, send) {

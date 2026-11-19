@@ -25,6 +25,15 @@ safeguards, and the reader's 2.7–5.5 V IO requirement.
 
 ## Mobile dashboard
 
+The dashboard now supports a per-box **Edit filament** form for material, color,
+an optional color swatch, and brand. Its ownership-checked endpoint stores a
+manual profile in `desired.config.filament`; it does not send a tag-write command
+or alter the firmware's calibrated spool/weight profile. Manual metadata is
+explicitly labeled and takes precedence over optional reported identity. Before
+enabling automatic NFC reads, define how scanned identity replaces or clears a
+manual override, and how users confirm the physical tag before a write. Do not
+reuse a manual save as a tag-write acknowledgment.
+
 - Read optional identity in the [device model](../mobile/lib/cloud.mjs) and
   pass it through the existing [devices endpoint](../mobile/app/api/devices/route.js).
   Treat absent fields on older firmware and stale samples as unavailable.
