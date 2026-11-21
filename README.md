@@ -560,3 +560,13 @@ If the new image fails before confirmation, MCUboot reverts to the previous one.
   the device heartbeat before rollout, or data will show "Symbol file missing".
 - Activate a new release for the test cohort (`deepa-test`) first; activate it
   for `default` only after it has been confirmed on the test board.
+
+## Enclosure
+
+![DrySpool Concept 03 concept render](image/enclosure/concept-03-render.jpg)
+
+- **Design:** split-printed black ASA box (each part ≤ 250 mm) with a gasketed hinged lid, a front pull-out desiccant drawer and a side cover that doubles as the electronics tray.
+- **Weighing:** two Adafruit 4541 load cells under a floating spool platform with rollers, read by one NAU7802.
+- **Power and filament:** external 5 V DC adapter into a barrel jack; filament exits through a PC4-M6 fitting and PTFE tube. No heater in version 1 (fan + desiccant).
+- **Roles:** Zicong Zhang (CAD and design); Deepa (test prints, fit checks, sealing tests and assembly).
+- **Details:** [docs/ENCLOSURE.md](docs/ENCLOSURE.md) · CAD repository: [dryspool-casework](https://github.com/zhang89-spec/dryspool-casework) (private, team access)
