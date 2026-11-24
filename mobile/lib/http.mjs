@@ -21,21 +21,12 @@ export function route(fn) {
 }
 
 export async function input(req) {
-  return readInput(req, false);
-}
-
-export async function apiInput(req) {
-  return readInput(req, true);
-}
-
-async function readInput(req, allowBearer) {
   // Next may construct req.url with the internal listener's hostname.
   // Browsers send the public authority in Host and cannot override Host in fetch.
   const origin = req.headers.get('origin');
   const scheme = process.env.VERCEL ? 'https:' : new URL(req.url).protocol;
   const host = req.headers.get('host') || new URL(req.url).host;
-  const native = allowBearer && !origin && /^Bearer [^\s]+$/i.test(req.headers.get('authorization') || '');
-  if (!native && origin !== scheme + '//' + host) {
+  if (origin !== scheme + '//' + host) {
     throw new ApiError(403, 'Invalid request origin.');
   }
   if (req.headers.get('content-type')?.split(';')[0].trim() !== 'application/json') {

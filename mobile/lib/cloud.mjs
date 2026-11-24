@@ -1,7 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { ApiError } from './http.mjs';
-import { validSerial } from './ownership.mjs';
-import { filamentProfile, savedFilament } from './filament.mjs';
+const validSerial = id => typeof id === 'string' && /^[-a-zA-Z0-9_]{1,128}$/.test(id);
 
 const modes = ['auto', 'on', 'off'];
 const phases = ['checking', 'transferring', 'restarting', 'idle', 'failed'];
@@ -17,26 +16,18 @@ export function device(slot, shadow, now = Date.now()) {
     !(ack?.request === desired.request && ack.mode === desired.mode && ack.expires === desired.expires));
   const env = sample.env_valid === true;
   const fan = sample.fan_valid === true && typeof sample.fan_on === 'boolean' ? sample.fan_on : null;
-  const spool = savedFilament(shadow.desired?.config?.filament);
   return {
     slot, device: 'DrySpool ' + slot, ts, online, pending, desired: desired?.mode ?? null,
     desiredId: desired?.request ?? null,
     temperature: env && Number.isFinite(sample.temperature_mc) ? sample.temperature_mc / 1000 : null,
     humidity: env && Number.isFinite(sample.humidity_mpct) ? sample.humidity_mpct / 1000 : null,
-    grams: sample.grams_valid === true ? finite(sample.filament_g) : null, fan, spool,
+    grams: sample.grams_valid === true ? finite(sample.filament_g) : null, fan,
     mode: modes.includes(sample.mode) ? sample.mode : null,
     firmware: typeof sample.firmware === 'string' ? sample.firmware : null,
     ota: phases.includes(sample.ota) ? sample.ota : null,
     request: Number.isInteger(sample.request) ? sample.request : null,
     control: online && sample.fan_api === 1 && fan !== null
   };
-}
-
-export async function saveFilament(id, value, read = readShadow, clock = Date.now) {
-  const profile = {...filamentProfile(value), source: 'manual', version: 1, updatedMs: clock()};
-  // Merge only metadata; never replace fan commands or reported sensor state.
-  await read(id, {desired: {config: {filament: profile}}});
-  return profile;
 }
 
 async function cloudRequest(path, patch, send) {
@@ -66,7 +57,7 @@ export function readShadow(id, patch, send = fetch) {
   return cloudRequest('/long-range/devices/' + encodeURIComponent(id) + '/state', patch, send);
 }
 
-export async function ownedCard({serial,label}, read = readShadow) {
+export async function readCard({serial,label}, read = readShadow) {
   let shadow = {};
   let error;
   try {
@@ -90,10 +81,28 @@ export async function commandSerial(id, mode, read = readShadow, clock = Date.no
   return { request, expires };
 }
 
-export async function ownedFleet(boxes, read = readShadow) {
+export async function readFleet(boxes, read = readShadow) {
   const rows = [];
   for (let i = 0; i < boxes.length; i += 8) {
-    rows.push(...await Promise.all(boxes.slice(i, i + 8).map(box => ownedCard(box, read))));
+    rows.push(...await Promise.all(boxes.slice(i, i + 8).map(box => readCard(box, read))));
   }
   return rows;
+}
+
+export function configuredDevices(env = process.env) {
+  const seen = new Set();
+  return ['A', 'B', 'C'].flatMap(slot => {
+    const serial = env['NRF_DEVICE_' + slot]?.trim();
+    if (!serial) return [];
+    if (!validSerial(serial)) throw new ApiError(503, 'Invalid device configuration.');
+    if (seen.has(serial.toLowerCase())) return [];
+    seen.add(serial.toLowerCase());
+    return [{serial, label: 'Box ' + slot}];
+  });
+}
+
+export function configuredSerial(slot) {
+  const box = configuredDevices().find(box => 'id-' + box.serial === slot);
+  if (!box) throw new ApiError(404, 'Box not found.');
+  return box.serial;
 }
