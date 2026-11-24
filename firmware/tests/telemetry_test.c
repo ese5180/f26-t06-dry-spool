@@ -10,7 +10,7 @@ int main(void)
 		.uptime_ms = 5000,
 		.temperature_mc = -1250,
 		.humidity_mpct = 41250,
-		.raw_counts = -7654321,
+		.raw_counts = {-7654321, 123456},
 		.filament_g = 0,
 		.fan_on = true,
 	};
@@ -25,20 +25,22 @@ int main(void)
 	/* An uncalibrated scale reports counts even when the BME is absent. */
 	s.env_valid = false;
 	s.raw_valid = true;
-	assert(dryspool_telemetry_channels(&s, 5100, ch) == 1);
-	assert(strcmp(ch[0].app_id, "DRYSPOOL_LOAD_CELL_COUNTS") == 0 && ch[0].value == -7654321);
+	assert(dryspool_telemetry_channels(&s, 5100, ch) == 2);
+	assert(strcmp(ch[0].app_id, "DRYSPOOL_LOAD_CELL_A_COUNTS") == 0 && ch[0].value == -7654321);
+
+	assert(strcmp(ch[1].app_id, "DRYSPOOL_LOAD_CELL_B_COUNTS") == 0 && ch[1].value == 123456);
 
 	/* A calibrated empty spool and an enabled fan really are data. */
 	s.grams_valid = s.fan_valid = s.env_valid = true;
-	assert(dryspool_telemetry_channels(&s, 5200, ch) == 5);
-	assert(strcmp(ch[3].app_id, "DRYSPOOL_FILAMENT_G") == 0 && ch[3].value == 0);
-	assert(strcmp(ch[4].app_id, "DRYSPOOL_DEHUMIDIFIER_ON") == 0 && ch[4].value == 1);
+	assert(dryspool_telemetry_channels(&s, 5200, ch) == 6);
+	assert(strcmp(ch[4].app_id, "DRYSPOOL_FILAMENT_G") == 0 && ch[4].value == 0);
+	assert(strcmp(ch[5].app_id, "DRYSPOOL_DEHUMIDIFIER_ON") == 0 && ch[5].value == 1);
 	assert(dryspool_telemetry_channels(&s, 4999, ch) == 0);
 	assert(dryspool_telemetry_channels(&s, 600000, ch) == 0);
 
 	/* After reconnect, a new sample replaces the pre-outage weight. */
 	s.uptime_ms = 600001;
 	s.filament_g = 350;
-	assert(dryspool_telemetry_channels(&s, 600002, ch) == 5 && ch[3].value == 350);
+	assert(dryspool_telemetry_channels(&s, 600002, ch) == 6 && ch[4].value == 350);
 	return 0;
 }

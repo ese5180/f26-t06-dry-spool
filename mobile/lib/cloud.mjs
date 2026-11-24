@@ -17,14 +17,7 @@ export function device(slot, shadow, now = Date.now()) {
     !(ack?.request === desired.request && ack.mode === desired.mode && ack.expires === desired.expires));
   const env = sample.env_valid === true;
   const fan = sample.fan_valid === true && typeof sample.fan_on === 'boolean' ? sample.fan_on : null;
-  const reportedSpool = sample.spool_valid === true && sample.spool && typeof sample.spool === 'object' ? {
-    material: typeof sample.spool.material === 'string' ? sample.spool.material.slice(0, 40) : null,
-    color: typeof sample.spool.color === 'string' ? sample.spool.color.slice(0, 80) : null,
-    brand: typeof sample.spool.brand === 'string' ? sample.spool.brand.slice(0, 80) : null,
-    source: sample.spool.source === 'openprinttag' ? 'openprinttag' : 'manual',
-  } : null;
-  const manualSpool = savedFilament(shadow.desired?.config?.filament);
-  const spool = manualSpool || reportedSpool;
+  const spool = savedFilament(shadow.desired?.config?.filament);
   return {
     slot, device: 'DrySpool ' + slot, ts, online, pending, desired: desired?.mode ?? null,
     desiredId: desired?.request ?? null,

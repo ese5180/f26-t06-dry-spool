@@ -48,7 +48,7 @@ export default function FilamentPanel({box, connected, reload}) {
 
   return <section className="box spool-panel" aria-label="Filament information">
     <div className="section-title"><h3>Filament</h3>
-      {!editing && !box.preview && <button type="button" className="edit-profile" onClick={edit}>Edit filament</button>}
+      {!editing && <button type="button" className="edit-profile" onClick={edit}>Edit filament</button>}
     </div>
     {editing ? <form className="stack filament-editor" aria-label="Edit filament" onSubmit={save}>
       <p className="supporting">Set the filament in {box.label}. These details are saved to this box’s profile.</p>
@@ -72,12 +72,11 @@ export default function FilamentPanel({box, connected, reload}) {
       </div>
       <label>Brand <span className="field-hint">Optional</span><input value={draft.brand} maxLength={80} disabled={saving}
         placeholder="e.g. Prusament" onChange={event => field('brand', event.target.value)} /></label>
-      <p className="source-note">Manual profile only. NFC tag reading and writing will be available after reader integration.</p>
       {error && <p className="profile-error" role="alert">{error}</p>}
       <div className="actions"><button className="primary-action" disabled={saving}>{saving ? 'Saving…' : 'Save filament'}</button>
         <button type="button" className="textbutton" disabled={saving} onClick={() => {setEditing(false); setError('');}}>Cancel</button></div>
     </form> : <>
-      <p className="profile-source">{spool?.source === 'openprinttag' ? 'OpenPrintTag' : spool ? 'Manual profile' : 'No profile'}</p>
+      <p className="profile-source">{spool ? 'Manual profile' : 'No profile'}</p>
       {spool ? <>
         <div className="filament-profile"><strong>{spool.material || 'Material unknown'}</strong>
           <span className="filament-color">{spool.colorHex && <i className="color-swatch" style={{backgroundColor: spool.colorHex}} />}{spool.color || 'Color not set'}</span>
@@ -86,9 +85,9 @@ export default function FilamentPanel({box, connected, reload}) {
           <strong>Storage guide: below {guidance.max}% RH</strong>
           <span>{guidance.above === null ? 'Waiting for a fresh humidity reading.' : guidance.above ? 'Above the recommended limit.' : 'Within the recommended limit.'} {guidance.note || ''}</span>
         </div> : <p className="supporting">No verified storage limit for this material yet.</p>}
-      </> : <p className="supporting">{box.preview ? 'This preview uses simulated readings.' : 'Add your filament’s material and color to keep track of this spool.'}</p>}
+      </> : <p className="supporting">Add your filament’s material and color to keep track of this spool.</p>}
       {guidance && <p className="source-note">Storage guidance from <a href={storageSource} target="_blank" rel="noopener noreferrer">Prusa ↗</a></p>}
-      {manual && <p className="source-note">Set manually · not read from or written to a tag.</p>}
+      {manual && <p className="source-note">Set manually.</p>}
       {message && <p className="profile-saved" role="status">{message}</p>}
     </>}
   </section>;

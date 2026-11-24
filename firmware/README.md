@@ -1,6 +1,6 @@
 # DrySpool MVP firmware
 
-The nRF7002 DK reads enclosure temperature and humidity from a BME280, estimates remaining filament from a load cell connected to a NAU7802, and controls the circulation fan. With Wi-Fi, it sends readings to nRF Cloud over CoAP/DTLS and downloads signed firmware updates over HTTPS through Memfault Release Management. Weighing, calibration, fan control, and the serial shell also work offline.
+The nRF7002 DK reads enclosure temperature and humidity from a BME280, estimates remaining filament from two load cells connected to channels A and B of one NAU7802, supporting one spool, and controls the circulation fan. With Wi-Fi, it sends readings to nRF Cloud over CoAP/DTLS and downloads signed firmware updates over HTTPS through Memfault Release Management. Weighing, calibration, fan control, and the serial shell also work offline.
 
 ## Phone dashboard
 
@@ -24,7 +24,7 @@ The local loop in [main.c](src/main.c) reads the sensors, updates the fan and pu
 | OTA download events and reboot | [Memfault update callback](src/ota/memfault_update.c) and [delayed reboot](src/ota/update_reboot.c) |
 | Memfault heartbeat measurements | [Metric definitions](src/diagnostics/memfault_metrics_heartbeat_config.def) |
 | Optional DK buttons for diagnostics and OTA checks | [Button actions](src/diagnostics/memfault_buttons.c) |
-| Phone dashboard and device discovery | [Box cards and controls](../mobile/app/dashboard.js) and [device inventory and command routing](../mobile/lib/cloud.mjs) |
+| Phone dashboard and account-owned devices | [Box cards and controls](../mobile/app/dashboard.js) and [device inventory and command routing](../mobile/lib/cloud.mjs) |
 | Firmware image storage | [MCUboot primary and download slots](boards/mcuboot-image-slots.dtsi) |
 
 Both builds use the board pin routing in [dryspool-peripherals.dtsi](boards/dryspool-peripherals.dtsi) and the shared
@@ -44,7 +44,11 @@ Disconnect power before wiring. The DK uses **1.8 V GPIO** by default. Power the
 | D14 / P1.02 (SDA), D15 / P1.03 (SCL) | Connect both the NAU7802 (0x2A) and the BME280 on the sensor side of the level shifter. The firmware accepts BME280 address 0x76 or 0x77 and uses 0x76 when both are present. |
 | A0 / P0.04 (digital output) | Connect to the fan driver’s active-high input. Use a driver that accepts 1.8 V logic or add level translation. Pull the input low so the fan stays off during reset. Power the 5 V fan from a separate supply through a suitable motor driver and share ground with the DK. GPIO supplies the control signal only. |
 
-Connect the four-wire 5 kg load cell to the NAU7802’s E+/E− excitation and A+/A− signal terminals. Follow the wire assignments supplied with your load cell. Leave the B channel on newer boards unused. Fix one end of the beam and mount the entire spool holder on the other end. Keep the enclosure walls and cables clear of the holder so they cannot take part of the load. The total load, including the holder, must stay within 5 kg. [Load cell #4541](https://www.adafruit.com/product/4541) · [NAU7802 breakout #4538](https://www.adafruit.com/product/4538) · [Terminal diagram](https://learn.adafruit.com/adafruit-nau7802-24-bit-adc-stemma-qt-qwiic/pinouts)
+Connect two four-wire load cells to the same NAU7802: share E+/E− excitation, connect the first signal pair to A+/A−, and the second signal pair to B+/B−. On the Adafruit cells, red is E+, black E−, green signal + and white signal −. Use secure splices if the E terminals cannot clamp two wires. Do not parallel the signal pairs. The JST/I²C wiring is unchanged; the ADC still has one address, 0x2A.
+
+Both cells support **one holder and one spool**. Fix each beam's fixed end and let its loaded end carry the holder; walls, cables and other supports must not bypass the cells. The firmware keeps a conservative **5 kg combined measurement limit**; two cells do not automatically make this a 10 kg scale. Respect each cell's rating including holder preload. Check the combined bridge excitation current against the NAU7802 AVDD limit (10 mA) and verify E+ to E− remains near the configured 3.0 V under both loads. For two equal bridges of resistance R, excitation current is approximately 2 × 3.0 / R amperes. Do not bypass the ADC excitation/reference circuit with an arbitrary supply.
+
+[Load cell #4541](https://www.adafruit.com/product/4541) · [NAU7802 breakout #4538](https://www.adafruit.com/product/4538) · [Terminal diagram](https://learn.adafruit.com/adafruit-nau7802-24-bit-adc-stemma-qt-qwiic/pinouts) · [NAU7802 datasheet](https://www.nuvoton.com/export/resource-files/en-us--DS_NAU7802_DataSheet_EN_Rev2.7.pdf)
 
 ## Build, flash, and open the serial shell
 
@@ -79,19 +83,25 @@ west build --no-sysbuild -p always -b nrf7002dk/nrf5340/cpuapp -d build-mvp-loca
 
 To test the bench image, flash it to a bench DK with `west flash --no-rebuild -d build-mvp-local --dev-id JLINK_SERIAL`.
 
-Open the application core’s USB virtual serial port at **115200 baud, 8N1**. The application prints each set of readings and waits two seconds before the next sampling cycle. Serial temperature and humidity use thousandths of a degree Celsius and thousandths of a percent RH, respectively. For example, `rh_mPct=40500` means 40.5% RH.
+Open the application core’s USB virtual serial port at **115200 baud, 8N1**. The application samples A then B, prints each set of readings and waits two seconds before the next sampling cycle (typically about 4.2 seconds per complete cycle). After each channel selection it waits 600 ms, discards the pending conversion and averages five fresh conversions at 10 SPS. Internal ADC offset calibration is performed for both channels at initialization and after recovery from an ADC error. The serial log displays temperature and relative humidity as `Temperature: 22.59 °C | Humidity: 37.30% RH` and adds `(high)` at or above the fan-on threshold.
 
 ## Calibrate the scale and select a spool
 
-1. Leave the installed holder in place. Remove the spool and any weights. Once the readings settle, enter `dryspool tare` to save the zero point. Repeat the calibration step whenever you tare again.
-2. Place a known weight on the holder and wait for a stable reading. For a 500 g weight, enter `dryspool cal 500`. Use the actual reference mass in grams. For each scale reading the firmware discards the pending conversion and averages five new conversions.
-3. Remove the weight. Enter a spool ID and its measured empty mass, for example `dryspool spool PLA01 210`, then load that spool. The `remaining_g` value subtracts the holder’s tare and the 210 g empty spool from the measured load. Enter the new ID and empty mass each time you switch spools. The board stores the current spool.
-4. Use `dryspool limits 30 40 100` to set the fan-off humidity, fan-on humidity (% RH), and low-filament threshold (g). These are the defaults for initial bench testing. Between the humidity thresholds, the fan keeps its previous state. If a humidity sample fails, the firmware requests fan-off. The `fan_command` field reports the GPIO command; there is no fan speed feedback.
-5. A successful command prints `Saved.` and writes its settings to flash. Until calibration and empty spool mass are set, the firmware reports raw counts and marks grams unavailable. If a sensor read fails, the serial output reports `unavailable` for the affected measurement.
+Each channel has its own zero point and counts-to-grams factor. Total holder load is the sum of the two calibrated readings; empty spool mass is subtracted **once**. Calibration must use the known force on the selected cell, not an assumed equal split of the holder load.
+
+1. In a fixture where a reference weight is carried entirely by cell A, remove that weight, wait for stable readings and run `dryspool tare A`. Add a known 500 g load entirely to A, let it settle, then run `dryspool cal A 500`. Substitute the actual reference mass. The other support must not carry part of this calibration load.
+2. Repeat independently for B: unloaded `dryspool tare B`, then `dryspool cal B 500` with the reference weight entirely on B. If the assembled holder cannot isolate the load, calibrate the cells separately before assembling it. Do not run both calibration commands against one shared 500 g load: neither cell necessarily carries 500 g.
+3. After assembly, keep the holder installed and remove the spool and reference weights. Use `dryspool zero` to update **both holder zeros while retaining the independently measured gains**. This command requires both channels to be calibrated. In contrast, `dryspool tare` resets both zeros and **invalidates both gains**; `dryspool tare A` or `B` invalidates only the selected gain, so use these only when recalibrating that cell.
+4. Select the spool and its measured empty mass, for example `dryspool spool PLA01 210`, then load that spool. Displayed filament weight subtracts the holder zeros and the 210 g empty spool once from the summed load. Enter the new ID and empty mass each time you switch spools. The board stores one current spool.
+5. Use `dryspool limits 30 40 100` to set fan-off humidity, fan-on humidity (% RH), and low-filament threshold (g). These remain the initial defaults. Between humidity thresholds the fan keeps its previous state. If a humidity sample fails, the firmware requests fan-off. The `Fan command` line reports the GPIO command; there is no fan speed feedback.
+
+A successful command prints `Saved.` and writes its settings to flash. The old ambiguous `dryspool cal 500` is rejected; specify A or B. Before both calibrations and empty spool mass are set, the log displays `Scale A: ... counts | B: ... counts` and marks filament grams unavailable. I²C errors, timeouts or saturated accepted ADC readings invalidate the whole weight sample; a partial/stale channel is never reported as a total. A disconnected analog bridge may float to plausible counts, so raw-read success alone is not proof that a cell is attached: verify each cell's load response.
+
+Dual-channel settings use `dryspool/v2`. On first boot with only a valid `dryspool/v1` record, the firmware retains spool ID, empty mass and thresholds, but clears both calibrations and zeros. It saves the migrated v2 record and leaves v1 untouched for rollback. Old firmware will see its old v1 settings, not subsequent v2 changes. Wi-Fi credentials and certificates are unaffected.
 
 ## Bench checks
 
-- Check the net weight with a different reference mass from the one used for calibration. Record the error with the spool stationary, rotating, and feeding filament to the printer. Use those observations to choose a margin for the low-filament alert.
+- Move a fixed reference mass between the left, center and right of the assembled holder. The summed mass should remain consistent even though A/B contributions change. Then check the net weight with a different reference mass from the one used for calibration. Record the error with the spool stationary, rotating, and feeding filament to the printer. Use those observations to choose a margin for the low-filament alert.
 - Exercise both humidity thresholds. Compare the serial fan command, driver input, and physical fan as humidity crosses each threshold, then restore the desired thresholds.
 - Start the DK without Wi-Fi and verify that the current spool ID, calibration, and thresholds still apply. Power off and disconnect one sensor at a time, then boot and check that the other function still works. After fixing the BME280 wiring, reboot so Zephyr initializes the sensor again.
 
@@ -106,45 +116,18 @@ wifi cred add -s YOUR_SSID -k 1 -p YOUR_PASSWORD
 wifi cred auto_connect
 ```
 
-## Bluetooth setup
+## Cloud telemetry
 
-With NCS v3.4.0, opt in to the BLE setup profile when building the signed image.
-Use the [same-drive build requirements](#build-flash-and-open-the-serial-shell)
-and team signing key from the normal Wi-Fi firmware.
-
-```powershell
-$dryspoolLocalConfig = (Resolve-Path firmware/local.conf).Path.Replace('\', '/')
-west build -p always --sysbuild -b nrf7002dk/nrf5340/cpuapp/ns `
-  -d build-ble-box firmware -- "-DEXTRA_CONF_FILE=$dryspoolLocalConfig" -DSB_CONFIG_DRYSPOOL_BLE_SETUP=y
-west flash --no-rebuild -d build-ble-box --dev-id JLINK_SERIAL
-```
-
-The BLE build adds the nRF5340 network core's IPC Radio image. Flash by J-Link
-for the first installation. Keep the existing page layout and signing key.
-This profile uses IPv4 and home Wi-Fi with modern encryption. It keeps the
-application and credential commands, and removes generic SDK shell tools. The
-provisioning decoder omits enterprise certificate buffers to reduce stack use.
-Use the DK's second user button (`sw1`) for Setup. A box with no saved Wi-Fi
-opens setup at boot. A configured box opens it after a button press. After
-the phone connects, press Setup again to allow that connection to configure
-Wi-Fi. The second LED marks the setup window. The window expires automatically.
-
-Follow the [phone setup guide](../setup-app/README.md#first-box). The radio
-uses Nordic's provisioning service. Its control point only accepts writes
-after physical confirmation. Keep BLE debug logs disabled because the Nordic
-transport can include request bytes at debug level. The box reports only a
-claim hash through its certificate-authenticated nRF Cloud session. The
-serial Wi-Fi credential commands remain available for bench use.
-
-After clock sync and cloud connection the board exchanges its dashboard shadow approximately every 5 seconds. The sensor history telemetry runs every 60 seconds by default. Check the device’s messages in nRF Cloud. Each report includes the currently valid channels. Raw NAU7802 counts are available before scale calibration. During an outage the board keeps only the latest sample in RAM. Reconnection resumes with fresh readings without replaying an outage history.
+After clock sync and cloud connection, the board exchanges its dashboard shadow approximately every 5 seconds. Sensor history uploads run every 60 seconds by default. Reports include valid measurements; raw A/B counts are available before calibration. During an outage the board keeps the latest sample in RAM and resumes with fresh readings after reconnecting.
 
 | Message appId | Value |
 | --- | --- |
 | `DRYSPOOL_TEMPERATURE_C` | BME280 temperature in °C |
-| `DRYSPOOL_HUMIDITY_PCT` | Enclosure relative humidity in % RH |
-| `DRYSPOOL_LOAD_CELL_COUNTS` | Signed NAU7802 ADC counts, averaged over five conversions |
-| `DRYSPOOL_FILAMENT_G` | Calibrated filament mass in grams after subtracting the empty spool |
-| `DRYSPOOL_DEHUMIDIFIER_ON` | Fan GPIO command, 1 for on and 0 for off |
+| `DRYSPOOL_HUMIDITY_PCT` | Relative humidity in % RH |
+| `DRYSPOOL_LOAD_CELL_A_COUNTS` | Channel A signed ADC counts, averaged over five conversions |
+| `DRYSPOOL_LOAD_CELL_B_COUNTS` | Channel B signed ADC counts, averaged over five conversions |
+| `DRYSPOOL_FILAMENT_G` | Sum of both calibrated channels, minus empty-spool mass |
+| `DRYSPOOL_DEHUMIDIFIER_ON` | Fan GPIO command: 1 on, 0 off |
 
 ## Verify telemetry and offline operation
 
@@ -158,6 +141,15 @@ cc -std=c11 -I firmware/src firmware/tests/fan_test.c -o /tmp/dryspool-fan-test
 cc -std=c11 -I firmware/src firmware/tests/calibration_test.c \
   firmware/src/spool/calibration.c -o /tmp/dryspool-calibration-test
 /tmp/dryspool-calibration-test
+cc -std=c11 -I firmware/tests/fakes -I firmware/src \
+  firmware/tests/nau7802_test.c -o /tmp/dryspool-adc-test
+/tmp/dryspool-adc-test
+cc -std=c11 -I firmware/tests/fakes -I firmware/src \
+  firmware/tests/profile_test.c firmware/src/spool/calibration.c -o /tmp/dryspool-profile-test
+/tmp/dryspool-profile-test
+cc -std=c11 -I firmware/tests/fakes -I firmware/src \
+  firmware/tests/commands_test.c firmware/src/spool/calibration.c -o /tmp/dryspool-commands-test
+/tmp/dryspool-commands-test
 ```
 
 Use the same DK for the online and offline checks:
@@ -178,5 +170,5 @@ Use the same DK for the online and offline checks:
    ```
 
 3. In the target cloud project, upload `build-wifi-box/firmware/zephyr/zephyr.signed.bin` as the release payload and `build-wifi-box/firmware/zephyr/zephyr.elf` from the same build for debug symbols. Create the N+1 release with the software and hardware identifiers reported by the test DK, then deploy it to a cohort containing only that board. A, B and C use the same software type `dryspool-wifi-box` and hardware type `nrf7002dk-rev1`. Check cohort membership by serial before activation. [Release upload commands](../docs/TEAM_SETUP_AND_DEMO.md#6-publish-a-new-fota-release)
-4. The device checks for updates periodically. For a manual check, run `mflt get_latest_url` in the UART shell, then `mflt get_latest_release` to download the available release. Watch the HTTPS download, reboot, MCUboot image validation, and application startup. Record the confirmation log. The trial image confirms once settings load, both the BME280 readings and raw NAU7802 counts are valid, and the fan GPIO command succeeds. Confirmation works offline and before scale calibration. If the image is still unconfirmed at the next reset, MCUboot rolls back.
+4. The device checks for updates periodically. For a manual check, run `mflt get_latest_url` in the UART shell, then `mflt get_latest_release` to download the available release. Watch the HTTPS download, reboot, MCUboot image validation, and application startup. Record the confirmation log. The trial image confirms once settings load, the BME280 readings and both A/B raw NAU7802 readings are valid, and the fan GPIO command succeeds. Confirmation works offline and before scale calibration. If the image is still unconfirmed at the next reset, MCUboot rolls back.
 5. Run `mflt get_device_info` to confirm N+1. Reboot once more, check that the version and calibration persist, and compare the live serial readings with cloud telemetry.

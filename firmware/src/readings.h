@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "sensors/scale.h"
 
 /* One completed pass of the local control loop. Missing data is explicitly
  * marked, so losing one sensor doesn't invalidate the other sensor's data.
@@ -18,7 +19,7 @@ struct dryspool_sample {
 	int64_t uptime_ms;
 	int32_t temperature_mc;
 	int32_t humidity_mpct;
-	int32_t raw_counts;
+	int32_t raw_counts[SCALE_CHANNELS];
 	int32_t filament_g;
 	bool env_valid;
 	bool raw_valid;

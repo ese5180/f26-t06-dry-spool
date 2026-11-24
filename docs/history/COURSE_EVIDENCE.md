@@ -33,10 +33,8 @@ product interface for:
 - estimated remaining filament (`DRYSPOOL_FILAMENT_G`); and
 - dehumidifier state (`DRYSPOOL_DEHUMIDIFIER_ON`).
 
-The final sensor and load-cell parts have not yet been selected, so the current
-backend deliberately emits deterministic simulated readings. Only
-`firmware/src/dryspool_sensors.c` must be replaced when those parts are fixed;
-the cloud and FOTA framework is already the full firmware framework.
+The current firmware reads the BME280 and both NAU7802 channels directly.
+See [current firmware](../../firmware/README.md) for wiring and calibration.
 
 ### Boot and update process
 
@@ -242,34 +240,7 @@ appears as *Received reboot event*.
 ### 4. Metrics
 
 Memfault collects metrics in RAM and sends them as a **heartbeat**: one summary
-value per metric per interval. Four groups are reported.
-
-#### 4.1 Power status (battery state of charge)
-
-The nRF7002 DK has no battery: it is always USB powered. To report power status
-through Memfault's standard battery metrics, firmware `0.1.6` enables
-`CONFIG_MEMFAULT_METRICS_BATTERY_ENABLE=y` (in `firmware/coap.conf`) and
-implements the platform hook in `firmware/src/dryspool_power.c`:
-
-```c
-int memfault_platform_get_stateofcharge(sMfltPlatformBatterySoc *soc)
-{
-	soc->soc = 100 * CONFIG_MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE;
-	soc->discharging = false; /* USB powered -> never discharging */
-	return 0;
-}
-```
-
-The SDK calls this hook at boot and at every heartbeat and reports
-`battery_soc_pct = 100` with *not discharging*. It also reports the discharge
-metrics, `battery_soc_pct_drop` and `battery_discharge_duration_ms`; while the
-board is on USB those sessions are skipped. In other words, the board reports
-"externally powered". This is a **placeholder**: the DrySpool PCB will read a
-real fuel gauge in the same function, and nothing else has to change.
-
-Status: power reporting was introduced in `0.1.6`. Firmware `0.1.7` retains it
-and adds the release-integrity and fleet-health improvements below. Cloud
-verification of `battery_soc_pct` remains part of the release checklist.
+value per metric per interval. The following groups were recorded.
 
 #### 4.2 Zephyr / NCS default metrics
 

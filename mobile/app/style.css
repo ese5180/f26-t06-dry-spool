@@ -140,15 +140,6 @@ h3 { font-size: 25px; font-weight: 600; margin: 0 }
 .stack label { display: grid; gap: 9px; font-size: 13px; font-weight: 500 }
 .stack input { min-width: 0; min-height: 47px; border: 1px solid #49534c; border-radius: 8px; background: #161d19; padding: 12px; color: var(--ink) }
 .field-hint { font-size: 11px; font-weight: 400; color: var(--muted) }
-.setup-guide { max-width: 700px }
-.setup-steps { padding-left: 23px; margin: 27px 0 }
-.setup-steps li { padding-left: 7px; margin-bottom: 27px }
-.setup-steps li::marker { color: var(--orange); font-weight: 600 }
-.setup-steps h3 { font-size: 22px }
-.setup-steps p { font-size: 13px; line-height: 1.65; color: var(--muted); margin: 9px 0; overflow-wrap: anywhere }
-.setup-steps .setup-availability { padding: 12px; border-radius: 8px; background: #30382d; border: 1px solid #46503e; color: #d1dcc5 }
-.setup-installed { display: flex; gap: 10px; align-items: center; min-height: 44px; font-size: 12px; margin: 12px 0 }
-.setup-installed input { width: 18px; height: 18px; accent-color: var(--orange) }
 .overview { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,290px),1fr)); gap: 18px }
 .summary-card { display: grid; align-content: start; gap: 11px; text-align: left; color: var(--ink) }
 .summary-card:hover { border-color: var(--orange); background: #2a322a }
@@ -232,7 +223,6 @@ h3 { font-size: 25px; font-weight: 600; margin: 0 }
   .segments { margin-top: 15px }
   .feedback { font-size: 11px }
   .firmware { margin-top: 20px }
-  .setup-guide { margin-top: 10px }
   .empty-state { padding: 25px }
 }
 @media (max-width: 370px) {

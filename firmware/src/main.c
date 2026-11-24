@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/printk.h>
 
 #include "spool/calibration.h"
 #include "sensors/environment.h"
@@ -8,12 +9,20 @@
 #include "spool/profile.h"
 #include "readings.h"
 #include "sensors/scale.h"
-#include "setup/provisioning.h"
 #ifdef CONFIG_SAMPLE_MEMFAULT_FOTA
 #include "ota/trial_image.h"
 #endif
 
 LOG_MODULE_REGISTER(dryspool, LOG_LEVEL_INF);
+
+/* Format signed thousandths to two decimal places without floating-point logging. */
+static void format_reading(char *out, size_t size, int32_t milli)
+{
+	uint32_t magnitude = milli < 0 ? 0U - (uint32_t)milli : (uint32_t)milli;
+	uint32_t hundredths = (magnitude + 5U) / 10U;
+	snprintk(out, size, "%s%u.%02u", milli < 0 && hundredths ? "-" : "",
+		 hundredths / 100U, hundredths % 100U);
+}
 
 static void update_environment(struct dryspool_sample *sample, const struct profile *profile,
 			       bool *fan_on)
@@ -21,10 +30,13 @@ static void update_environment(struct dryspool_sample *sample, const struct prof
 	int rc = environment_read(&sample->temperature_mc, &sample->humidity_mpct);
 	sample->env_valid = (rc == 0);
 	if (sample->env_valid) {
-		LOG_INF("temp_mC=%d rh_mPct=%d high_rh=%d", sample->temperature_mc,
-			sample->humidity_mpct, sample->humidity_mpct >= profile->rh_on * 1000);
+		char temperature[16], humidity[16];
+		format_reading(temperature, sizeof(temperature), sample->temperature_mc);
+		format_reading(humidity, sizeof(humidity), sample->humidity_mpct);
+		LOG_INF("Temperature: %s °C | Humidity: %s%% RH%s", temperature, humidity,
+			sample->humidity_mpct >= profile->rh_on * 1000 ? " (high)" : "");
 	} else {
-		LOG_WRN("environment=unavailable err=%d", rc);
+		LOG_WRN("Temperature and humidity unavailable (sensor error %d)", rc);
 	}
 
 	sample->fan_request = dryspool_get_fan_request();
@@ -34,38 +46,47 @@ static void update_environment(struct dryspool_sample *sample, const struct prof
 	if (sample->fan_valid) {
 		*fan_on = target;
 		sample->fan_on = target;
-		LOG_INF("fan_command=%s", *fan_on ? "on" : "off");
+		LOG_INF("Fan command: %s (%s)", target ? "On" : "Off",
+			sample->fan_request.mode == FAN_AUTO ? "Auto" : "Manual");
 	} else {
-		LOG_ERR("fan_output=unavailable");
+		LOG_ERR("Fan output unavailable: GPIO command failed");
 	}
 }
 
 static void update_weight(struct dryspool_sample *sample, struct profile *profile,
 			  uint32_t starting_revision)
 {
-	int rc = scale_sample(&sample->raw_counts);
+	int failed_channel;
+	int rc = scale_sample(sample->raw_counts, &failed_channel);
 	if (rc != 0) {
-		LOG_WRN("scale=unavailable err=%d", rc);
+		LOG_WRN("Scale read failed: %s", failed_channel < 0 ? "ADC initialization" :
+			(failed_channel == SCALE_A ? "channel A" : "channel B"));
+		if (rc == -EIO) {
+			LOG_WRN("Scale unavailable: I/O error (%d). Check NAU7802 power and wiring.", rc);
+		} else {
+			LOG_WRN("Scale unavailable (sensor error %d)", rc);
+		}
 		return;
 	}
 
 	sample->raw_valid = true;
 	/* A shell command can change the active spool or calibration while
-	 * the ADC takes its five readings. Apply the new settings next cycle.
+	 * the ADC samples both channels. Apply the new settings next cycle.
 	 */
 	if (profile_get(profile) != starting_revision) {
-		LOG_INF("raw=%d remaining=unavailable (settings changed)", sample->raw_counts);
+		LOG_INF("Scale A: %d counts | B: %d counts | Filament unavailable: settings changed", sample->raw_counts[SCALE_A], sample->raw_counts[SCALE_B]);
 		return;
 	}
 	rc = profile_filament_g(profile, sample->raw_counts, &sample->filament_g);
 	if (rc == -ENODATA) {
-		LOG_INF("raw=%d remaining=unavailable (cal/spool needed)", sample->raw_counts);
+		LOG_INF("Scale A: %d counts | B: %d counts | Filament unavailable: calibrate both A and B and set empty spool mass", sample->raw_counts[SCALE_A], sample->raw_counts[SCALE_B]);
 	} else if (rc != 0) {
-		LOG_WRN("raw=%d remaining=unavailable (outside scale range)", sample->raw_counts);
+		LOG_WRN("Scale A: %d counts | B: %d counts | Filament unavailable: weight outside scale range", sample->raw_counts[SCALE_A], sample->raw_counts[SCALE_B]);
 	} else {
 		sample->grams_valid = true;
-		LOG_INF("spool=%s raw=%d remaining_g=%d low=%d", profile->spool, sample->raw_counts,
-			sample->filament_g, sample->filament_g <= profile->low_g);
+		LOG_INF("Spool: %s | Filament remaining: %d g%s | Scale A: %d counts | B: %d counts", profile->spool,
+			sample->filament_g, sample->filament_g <= profile->low_g ? " (low)" : "",
+			sample->raw_counts[SCALE_A], sample->raw_counts[SCALE_B]);
 	}
 }
 
@@ -82,12 +103,6 @@ int main(void)
 	}
 #ifdef CONFIG_SAMPLE_MEMFAULT_FOTA
 	trial_image_init();
-#endif
-#ifdef CONFIG_DRYSPOOL_BLE_SETUP
-	int setup_rc = dryspool_setup_init();
-	if (setup_rc) {
-		LOG_ERR("Bluetooth setup unavailable: %d", setup_rc);
-	}
 #endif
 	for (;;) {
 		struct dryspool_sample sample = {0};

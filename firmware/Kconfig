@@ -10,10 +10,6 @@ config DRYSPOOL_CLOUD
 	bool
 	default y if BOARD_NRF7002DK_NRF5340_CPUAPP_NS
 
-config DRYSPOOL_BLE_SETUP
-	bool "DrySpool Bluetooth setup"
-	depends on DRYSPOOL_CLOUD
-
 config APP_VERSION
 	string "DrySpool application version"
 	default "$(APPVERSION)"

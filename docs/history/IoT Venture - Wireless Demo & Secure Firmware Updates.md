@@ -25,7 +25,7 @@ The **application** downloads the image using the Memfault/NCS FOTA integration.
 
 ### 4. What wireless communication is used, and why?
 
-We use **HTTPS over Wi-Fi**. Our board also supports BLE, but Wi-Fi lets it download directly from the cloud using the same connection as our product, without a phone acting as a gateway.
+We use **HTTPS over Wi-Fi**. Wi-Fi downloads updates directly from the cloud.
 
 ### 5. Where are the downloaded firmware images stored?
 

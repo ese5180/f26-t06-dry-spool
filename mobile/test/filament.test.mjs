@@ -6,7 +6,7 @@ import { PUT } from '../app/api/devices/[serial]/filament/route.js';
 
 const now = 1800000000000;
 test('manual profiles validate text and optional swatches without accepting caller-supplied provenance', () => {
-  assert.deepEqual(filamentProfile({material:' PETG ',color:' Blue ',colorHex:'#123abc',source:'openprinttag'}),
+  assert.deepEqual(filamentProfile({material:' PETG ',color:' Blue ',colorHex:'#123abc',source:'untrusted'}),
     {material:'PETG',color:'Blue',colorHex:'#123ABC',brand:''});
   for (const value of [null, [], {material:'',color:'Blue'}, {material:'PLA',color:''},
     {material:'a'.repeat(41),color:'Blue'}, {material:'PLA',color:17},
@@ -43,7 +43,7 @@ test('saving only changes selected-box metadata, survives reload while offline, 
   assert.equal(reloaded.grams,null);
   assert.equal(reloaded.control,false);
   shadow.reported.dryspool.spool_valid = true;
-  shadow.reported.dryspool.spool = {material:'PLA',color:'Orange',source:'openprinttag'};
+  shadow.reported.dryspool.spool = {material:'PLA',color:'Orange',source:'untrusted'};
   assert.equal(device('id-box-1',shadow,now).spool.source,'manual');
   assert.equal(device('id-box-2',{},now).spool,null);
   await assert.rejects(saveFilament('box-1',{material:'PLA',color:'Blue'},async()=>{throw Error('Unavailable');}));
@@ -75,7 +75,7 @@ test('profile API authenticates, rejects invalid/cross-origin input before cloud
   assert.equal((await PUT(request({profile:{material:'PLA',color:''}}),context)).status,400);
   assert.equal((await PUT(request({profile:{material:'PLA',color:'x'.repeat(1100)}}),context)).status,413);
   assert.equal(writes.length,0);
-  const response=await PUT(request({profile:{material:'PETG',color:'Blue',colorHex:'#123abc',source:'openprinttag'}}),context);
+  const response=await PUT(request({profile:{material:'PETG',color:'Blue',colorHex:'#123abc',source:'untrusted'}}),context);
   assert.equal(response.status,200);
   assert.equal(response.headers.get('cache-control'),'private, no-store');
   const {profile}=await response.json();

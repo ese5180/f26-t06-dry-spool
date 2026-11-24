@@ -132,12 +132,9 @@ test('storage guidance needs a verified material and never guesses unknown limit
   assert.equal(storageGuidance(null,20),null);
 });
 
-test('spool identity is exposed only when firmware marks it valid', () => {
+test('device reports do not supply filament metadata', () => {
   const shadow = sample();
-  shadow.reported.dryspool.spool = {material:'PETG',color:'Blue',source:'openprinttag'};
-  assert.equal(device('A',shadow,now).spool,null);
+  shadow.reported.dryspool.spool = {material:'PETG',color:'Blue'};
   shadow.reported.dryspool.spool_valid = true;
-  assert.deepEqual(device('A',shadow,now).spool,{
-    material:'PETG',color:'Blue',brand:null,source:'openprinttag'
-  });
+  assert.equal(device('A',shadow,now).spool,null);
 });

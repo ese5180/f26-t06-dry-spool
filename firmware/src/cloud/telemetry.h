@@ -3,14 +3,14 @@
 #include <stddef.h>
 #include "readings.h"
 
-enum { DRYSPOOL_CHANNEL_COUNT = 5 };
+enum { DRYSPOOL_CHANNEL_COUNT = 6 };
 
 struct dryspool_channel {
 	const char *app_id;
 	double value;
 };
 
-/* The local cycle typically takes 2.5 s. Allow for a sensor timeout but never
+/* The local cycle typically takes about 4.2 s. Allow for a sensor timeout but never
  * send the last reading indefinitely if local sampling has stopped.
  */
 static inline bool dryspool_sample_is_fresh(const struct dryspool_sample *s, int64_t now_ms)
@@ -31,7 +31,8 @@ static inline size_t dryspool_telemetry_channels(const struct dryspool_sample *s
 		out[n++] = (struct dryspool_channel){"DRYSPOOL_HUMIDITY_PCT", s->humidity_mpct / 1000.0};
 	}
 	if (s->raw_valid) {
-		out[n++] = (struct dryspool_channel){"DRYSPOOL_LOAD_CELL_COUNTS", s->raw_counts};
+		out[n++] = (struct dryspool_channel){"DRYSPOOL_LOAD_CELL_A_COUNTS", s->raw_counts[SCALE_A]};
+		out[n++] = (struct dryspool_channel){"DRYSPOOL_LOAD_CELL_B_COUNTS", s->raw_counts[SCALE_B]};
 	}
 	if (s->grams_valid) {
 		out[n++] = (struct dryspool_channel){"DRYSPOOL_FILAMENT_G", s->filament_g};
