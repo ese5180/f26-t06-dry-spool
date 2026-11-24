@@ -17,7 +17,7 @@
 | Location | What to find there |
 | --- | --- |
 | [firmware/](firmware/README.md) | Zephyr application for the nRF7002 DK, with offline and connected build profiles |
-| [mobile/](mobile/README.md) | Live readings and fan controls |
+| [mobile/](mobile/README.md) | Account backend, device ownership, and web Dashboard |
 | [docs/](docs/TEAM_SETUP_AND_DEMO.md) | Team setup, provisioning, release, and demo guide |
 | [docs/history/](docs/history/COURSE_EVIDENCE.md) | Course evidence for wireless updates and fleet management, including the [original demo report](docs/history/IoT%20Venture%20-%20Wireless%20Demo%20%26%20Secure%20Firmware%20Updates.pdf) |
 
@@ -34,7 +34,7 @@ builds report to nRF Cloud and support signed updates through Memfault.
 - Local fan control, spool selection, calibration and persistent thresholds.
 - Wi-Fi telemetry and fan commands through nRF Cloud.
 - Signed firmware updates and diagnostics through Memfault.
-- Public web dashboard showing readings and fan controls.
+- Account-scoped web dashboard, device names and manually entered filament profiles.
 
 See [firmware setup](firmware/README.md) for wiring, calibration and Wi-Fi configuration,
-and [dashboard setup](mobile/README.md) for cloud and device configuration.
+and [dashboard setup](mobile/README.md) for accounts and device assignment.
